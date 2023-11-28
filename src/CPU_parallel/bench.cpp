@@ -9,7 +9,7 @@ int main(){
     uniform_real_distribution<double> distr(0.0, 2*M_PI);
 
     vector<double> epsilons;
-    double eps = 1e-8;
+    double eps = 1e-10;
     while(eps >= 1e-10){
         epsilons.push_back(eps);
         eps = eps / 10;

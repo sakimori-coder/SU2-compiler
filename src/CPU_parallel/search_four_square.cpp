@@ -112,7 +112,8 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square(
     std::sort(Z_squared.begin(), Z_squared.end());
     std::sort(W_squared.begin(), W_squared.end());
 
-    const long split_count = omp_get_max_threads();   // 時間計測するとこれが一番速そう?
+    const long split_count = 96;
+    // const long split_count = omp_get_max_threads();   // 時間計測するとこれが一番速そう?
     const long interval_X = std::max(long(std::ceil(double(N1) / split_count)), 1l);
     const long interval_Z = std::max(long(std::ceil(double(N3) / split_count)), 1l);
 
