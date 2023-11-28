@@ -8,9 +8,9 @@ while(eps >= 1e-10):
     x.append(eps)
     eps = eps / 10
 
-MAX = [12, 22, 30, 40, 52, 60, 70, 80]
-MIN = [2, 10, 20, 30, 46, 54, 58, 68]
-mean = [7.96, 18, 27.78, 38.04, 48.04, 57.92, 67.7, 77.52]
+MAX = [12, 22, 30, 40, 52, 60, 70, 80, 90]
+MIN = [2, 10, 20, 30, 46, 54, 58, 68, 78]
+mean = [7.96, 18, 27.78, 38.04, 48.04, 57.92, 67.7, 77.52, 87.86]
 x = x[:len(MAX)]
 
 x_ideal = [1/(i+1) for i in range(0, int(1e11), 10000000)]
@@ -31,7 +31,7 @@ ax.set_xscale("log")
 x.reverse()
 ax.set_xticks(x)
 ax.invert_xaxis()
-ax.set_xlim(0.7, 0.5*1e-8)
+ax.set_xlim(0.7, 0.5*1e-9)
 
 ax.set_xlabel("Approximation accuracy ε")
 ax.set_ylabel("T-count")
