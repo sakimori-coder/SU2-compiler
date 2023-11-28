@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bits/stdc++.h>
+#include <omp.h>
 
 template<class RandomAccessIterator>
 using Pair_Iterator = std::pair<RandomAccessIterator, RandomAccessIterator>;
@@ -111,27 +112,73 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square(
     std::sort(Z_squared.begin(), Z_squared.end());
     std::sort(W_squared.begin(), W_squared.end());
 
-    T *XY, *ZW;
-    XY = new T[N1*N2];
-    ZW = new T[N3*N4];
+    const int split_count = omp_get_max_threads();   // 時間計測するとこれが一番速そう?
+    const int interval_X = std::max(int(std::ceil(double(N1) / split_count)), 1);
+    const int interval_Z = std::max(int(std::ceil(double(N3) / split_count)), 1);
 
-    for(int i = 0; i < N1; i++){
-        for(int j = 0; j < N2; j++) XY[i*N2 + j] = X_squared[i] + Y_squared[j];
+    std::vector<T*> XY_list(split_count, NULL);
+    std::vector<T*> ZW_list(split_count, NULL);
+
+#pragma omp parallel for
+    for(int nX = 0; nX < split_count; nX++){
+        const int XY_size = (std::min(N1, interval_X*(nX+1)) - interval_X*nX) * N2;
+        if(XY_size <= 0) continue;
+        T *XY = new T[XY_size];
+
+        for(int i = 0; i < std::min(N1 - nX*interval_X, interval_X); i++){
+            for(int j = 0; j < N2; j++) XY[i*N2 + j] = X2[nX*interval_X + i] + Y2[j];
+        } 
+
+        // sort_for_Direct_Product_noPrallel(XY, XY + XY_size, std::min(interval_X, N1-interval_X*nX), N2);
+        std::sort(XY, XY + XY_size);
+
+        XY_list[nX] = XY;
     }
-    for(int i = 0; i < N3; i++){
-        for(int j = 0; j < N4; j++) ZW[i*N4 + j] = Z_squared[i] + W_squared[j];
-    } 
 
-    std::sort(XY, XY + N1*N2);
-    std::sort(ZW, ZW + N3*N4);
+#pragma omp parallel for
+    for(int nZ = 0; nZ < split_count; nZ++){
+        const int ZW_size = (std::min(N3, interval_Z*(nZ+1)) - interval_Z*nZ) * N4;
+        if(ZW_size <= 0) continue;
+        T *ZW = new T[ZW_size];
+
+        for(int i = 0; i < min(n3 - nZ*interval_Z, interval_Z); i++){
+            for(int j = 0; j < n4; j++) ZW[i*n4 + j] = Z2[nZ*interval_Z + i] + W2[j];
+        } 
+        
+        // sort_for_Direct_Product_noPrallel(ZW, ZW + ZW_size, std::min(interval_Z, N3-interval_Z*nZ), N4);
+        std::sort(ZW, ZW + ZW_size);
+
+        ZW_list[nZ] = ZW;
+    }
 
 
-    std::vector<Pair_Iterator<T*>> solutions = 
-                            two_points_technique(XY, XY + N1*N2, ZW, ZW + N3*N4, key);
+    
+    std::vector<std::vector<Pair_Iterator<T*>>> 
+                    results(split_count, std::vector<Pair_Iterator<T*>>(split_count));
 
+#pragma omp parallel for 
+    for(int loop = 0; loop < split_count*split_count; loop++){
+        int nX = loop / split_count;
+        int nZ = loop % split_count;
+
+        T *XY = XY_list[nX];
+        T *ZW = ZW_list[nZ];
+
+        std::vector<Pair_Iterator<T*>> solutions = 
+                                two_points_technique(XY, XY + N1*N2, ZW, ZW + N3*N4, key);
+        
+        results[nX][nZ] = solutions;
+    }
+
+    std::vector<Pair_Iterator<T*>> solutions_total;
+    for(int nX = 0; nX < split_count; nX++){
+        for(int nZ = 0; nZ < split_count; nZ++){
+            for(auto ele : results[nX][nZ]) solutions_total.push_back(ele); 
+        }
+    }
 
     std::vector<Tuple_Iterator<RandomAccessIterator>> ret;
-    for(auto P : solutions){
+    for(auto P : solutions_total){
         T* left = P.first;
         T* right = P.second;
         
@@ -139,10 +186,10 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square(
         auto [z_ans, w_ans] = search_two_square(first_Z, last_Z, first_W, last_W, *right);
 
         ret.push_back({x_ans, y_ans, z_ans, w_ans});
-    }
+    }  
 
-    delete[] XY;
-    delete[] ZW;
+    for(int nX = 0; nX < split_count; nX++) delete[] XY_list[nX];
+    for(int nZ = 0; nZ < split_count; nZ++) delete[] XY_list[nZ];
 
     return ret;
 }
