@@ -1,4 +1,7 @@
 bench.sh
+log*
+*.e
+*.o
 
 # Prerequisites
 *.d
