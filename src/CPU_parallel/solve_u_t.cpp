@@ -137,7 +137,7 @@ std::tuple<ZOmega<T>, ZOmega<T>, int> solve_u_t(std::complex<double> u, std::com
     assert(eps >= 0);
     Pair_ZOmega<T> v = {};
     for(int k = 0; k < 4*std::log2(1/eps); k++){
-        // cout << "k " <<  k << endl;
+        std::cout << "k " <<  k << std::endl;
         Pair_ZOmega<T> solution = _solve_u_t<T>(u, t, eps, k);
         if(solution != v) return {solution.first, solution.second, k};
     }
