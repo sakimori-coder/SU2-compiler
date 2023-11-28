@@ -142,7 +142,8 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square(
         ret.push_back({x_ans, y_ans, z_ans, w_ans});
     }
 
-    delete[] XY, ZW;
+    delete[] XY;
+    delete[] ZW;
 
     return ret;
 }
