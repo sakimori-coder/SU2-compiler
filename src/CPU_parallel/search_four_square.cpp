@@ -265,8 +265,6 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square_using_vecto
 #pragma omp parallel for
     for(long nX = 0; nX < split_count; nX++){
         const long XY_size = std::max((std::min(N1, interval_X*(nX+1)) - interval_X*nX) * N2, 0l);
-        // if(XY_size <= 0) continue;
-        // std::cout << XY_size << std::endl;
         std::vector<T> XY = XY_list[nX];
         XY.resize(XY_size);
 
@@ -276,12 +274,12 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square_using_vecto
 
         // sort_for_Direct_Product_noPrallel(XY, XY + XY_size, std::min(interval_X, N1-interval_X*nX), N2);
         std::sort(XY.begin(), XY.end());
+        XY_list[nX] = XY;
     }
 
 #pragma omp parallel for
     for(long nZ = 0; nZ < split_count; nZ++){
         const long ZW_size = std::max((std::min(N3, interval_Z*(nZ+1)) - interval_Z*nZ) * N4, 0l);
-        // if(ZW_size <= 0) continue;
         std::vector<T> ZW = ZW_list[nZ];
         ZW.resize(ZW_size);
 
@@ -291,9 +289,12 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square_using_vecto
         
         // sort_for_Direct_Product_noPrallel(ZW, ZW + ZW_size, std::min(interval_Z, N3-interval_Z*nZ), N4);
         std::sort(ZW.begin(), ZW.end());
+        ZW_list[nZ] = ZW;
     }
 
-    std::vector<Pair_Iterator<typename std::vector<T>::iterator>> solutions_total;
+    std::vector<std::vector<std::vector<Pair_Iterator<typename std::vector<T>::iterator>>>> 
+                                                                results(split_count);
+    for(int i = 0; i < split_count; i++) results[i].resize(split_count);
 
 #pragma omp parallel for 
     for(long loop = 0; loop < split_count*split_count; loop++){
@@ -303,18 +304,19 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square_using_vecto
         std::vector<T> XY = XY_list[nX];
         std::vector<T> ZW = ZW_list[nZ];
 
-        auto solutions = two_points_technique(XY.begin(), XY.end(), ZW.begin(), ZW.end(), key);
-        
-        solutions_total.insert(solutions_total.end(), solutions.begin(), solutions.end());
+        auto solutions = two_points_technique(XY_list[nX].begin(), XY_list[nX].end(), ZW_list[nZ].begin(), ZW_list[nZ].end(), key);
+
+        results[nX][nZ] = solutions;
     }
 
-    // std::vector<Pair_Iterator<std::vector<T>>> solutions_total;
-    // for(long nX = 0; nX < split_count; nX++){
-    //     for(long nZ = 0; nZ < split_count; nZ++){
-    //         for(auto ele : results[nX][nZ]) solutions_total.push_back(ele); 
-    //     }
-    // }
+    // std::cout << solutions_total.size() << std::endl;
 
+    std::vector<Pair_Iterator<typename std::vector<T>::iterator>> solutions_total;
+    for(long nX = 0; nX < split_count; nX++){
+        for(long nZ = 0; nZ < split_count; nZ++){
+            for(auto ele : results[nX][nZ]) solutions_total.push_back(ele); 
+        }
+    }
 
     std::vector<Tuple_Iterator<RandomAccessIterator>> ret;
     for(auto P : solutions_total){

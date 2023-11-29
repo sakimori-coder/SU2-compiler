@@ -1,8 +1,8 @@
 bench.sh
 example.sh
 log*
-*.e
-*.o
+*.e\d+
+*.o\d+
 
 # Prerequisites
 *.d
