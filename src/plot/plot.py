@@ -24,8 +24,8 @@ y_ideal = [3*np.log2(1/eps) for eps in x_ideal]
 clr = plt.cm.Purples(0.9)
 fig, ax = plt.subplots()
 ax.scatter(x, mean, label="mean")
-ax.fill_between(x, MIN, MAX, alpha=0.3, edgecolor=clr, facecolor=clr)
-ax.plot(x_ideal, y_ideal, color="g", label="3log(1/ε)")
+ax.fill_between(x, MIN, MAX, alpha=0.3, edgecolor=clr, facecolor=clr, label="MIN-MAX range")
+ax.plot(x_ideal, y_ideal, "--", color="r", label="$3log_{2}(1/\epsilon)$")
 
 ax.set_xscale("log")
 x.reverse()

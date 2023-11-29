@@ -1,0 +1,3 @@
+terminate called after throwing an instance of 'std::bad_alloc'
+  what():  std::bad_alloc
+/var/spool/pbs/mom_priv/jobs/198515.CPUcluster-PRISM.SC: line 10: 56483 Aborted                 (core dumped) ./a.out > log.txt

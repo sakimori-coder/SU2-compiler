@@ -197,3 +197,135 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square(
 
     return ret;
 }
+
+
+
+
+
+
+
+
+
+template<class RandomAccessIterator, typename T>
+std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square_using_vector(
+                            RandomAccessIterator first_X, RandomAccessIterator last_X,
+                            RandomAccessIterator first_Y, RandomAccessIterator last_Y,
+                            RandomAccessIterator first_Z, RandomAccessIterator last_Z,
+                            RandomAccessIterator first_W, RandomAccessIterator last_W,
+                            const T& key)
+{
+    long N1 = std::distance(first_X, last_X);
+    long N2 = std::distance(first_Y, last_Y);
+    long N3 = std::distance(first_Z, last_Z);
+    long N4 = std::distance(first_W, last_W);
+
+
+    long i = 0;
+    std::vector<T> X_squared(N1);
+    for(auto it = first_X; it != last_X; it++){
+        X_squared[i] = (*it)*(*it);
+        i++;
+    }
+
+    i = 0;
+    std::vector<T> Y_squared(N2);
+    for(auto it = first_Y; it != last_Y; it++){
+        Y_squared[i] = (*it)*(*it);
+        i++;
+    }
+
+    i = 0;
+    std::vector<T> Z_squared(N3);
+    for(auto it = first_Z; it != last_Z; it++){
+        Z_squared[i] = (*it)*(*it);
+        i++;
+    }
+
+    i = 0;
+    std::vector<T> W_squared(N4);
+    for(auto it = first_W; it != last_W; it++){
+        W_squared[i] = (*it)*(*it);
+        i++;
+    }
+
+    // 事前にソートしておくと交換回数が減って後のソートが少しだけ高速になる
+    std::sort(X_squared.begin(), X_squared.end());
+    std::sort(Y_squared.begin(), Y_squared.end());
+    std::sort(Z_squared.begin(), Z_squared.end());
+    std::sort(W_squared.begin(), W_squared.end());
+
+    const long split_count = 96;
+    // const long split_count = omp_get_max_threads();   // 時間計測するとこれが一番速そう?
+    const long interval_X = std::max(long(std::ceil(double(N1) / split_count)), 1l);
+    const long interval_Z = std::max(long(std::ceil(double(N3) / split_count)), 1l);
+
+    std::vector<std::vector<T>> XY_list(split_count);
+    std::vector<std::vector<T>> ZW_list(split_count);
+
+#pragma omp parallel for
+    for(long nX = 0; nX < split_count; nX++){
+        const long XY_size = std::max((std::min(N1, interval_X*(nX+1)) - interval_X*nX) * N2, 0l);
+        // if(XY_size <= 0) continue;
+        // std::cout << XY_size << std::endl;
+        std::vector<T> XY = XY_list[nX];
+        XY.resize(XY_size);
+
+        for(long i = 0; i < std::min(N1 - nX*interval_X, interval_X); i++){
+            for(long j = 0; j < N2; j++) XY[i*N2 + j] = X_squared[nX*interval_X + i] + Y_squared[j];
+        } 
+
+        // sort_for_Direct_Product_noPrallel(XY, XY + XY_size, std::min(interval_X, N1-interval_X*nX), N2);
+        std::sort(XY.begin(), XY.end());
+    }
+
+#pragma omp parallel for
+    for(long nZ = 0; nZ < split_count; nZ++){
+        const long ZW_size = std::max((std::min(N3, interval_Z*(nZ+1)) - interval_Z*nZ) * N4, 0l);
+        // if(ZW_size <= 0) continue;
+        std::vector<T> ZW = ZW_list[nZ];
+        ZW.resize(ZW_size);
+
+        for(long i = 0; i < std::min(N3 - nZ*interval_Z, interval_Z); i++){
+            for(long j = 0; j < N4; j++) ZW[i*N4 + j] = Z_squared[nZ*interval_Z + i] + W_squared[j];
+        } 
+        
+        // sort_for_Direct_Product_noPrallel(ZW, ZW + ZW_size, std::min(interval_Z, N3-interval_Z*nZ), N4);
+        std::sort(ZW.begin(), ZW.end());
+    }
+
+    std::vector<Pair_Iterator<typename std::vector<T>::iterator>> solutions_total;
+
+#pragma omp parallel for 
+    for(long loop = 0; loop < split_count*split_count; loop++){
+        long nX = loop / split_count;
+        long nZ = loop % split_count;
+
+        std::vector<T> XY = XY_list[nX];
+        std::vector<T> ZW = ZW_list[nZ];
+
+        auto solutions = two_points_technique(XY.begin(), XY.end(), ZW.begin(), ZW.end(), key);
+        
+        solutions_total.insert(solutions_total.end(), solutions.begin(), solutions.end());
+    }
+
+    // std::vector<Pair_Iterator<std::vector<T>>> solutions_total;
+    // for(long nX = 0; nX < split_count; nX++){
+    //     for(long nZ = 0; nZ < split_count; nZ++){
+    //         for(auto ele : results[nX][nZ]) solutions_total.push_back(ele); 
+    //     }
+    // }
+
+
+    std::vector<Tuple_Iterator<RandomAccessIterator>> ret;
+    for(auto P : solutions_total){
+        auto left = P.first;
+        auto right = P.second;
+        
+        auto [x_ans, y_ans] = search_two_square(first_X, last_X, first_Y, last_Y, *left);
+        auto [z_ans, w_ans] = search_two_square(first_Z, last_Z, first_W, last_W, *right);
+
+        ret.push_back({x_ans, y_ans, z_ans, w_ans});
+    }  
+
+    return ret;
+}

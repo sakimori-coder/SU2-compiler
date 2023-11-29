@@ -87,28 +87,28 @@ Pair_ZOmega<T> _solve_u_t(std::complex<double> u, std::complex<double> t, double
 
 
     // u = x+iy, t = z+iwと書ける場合(パターン1)
-    auto solutions1 = search_four_square(X.begin(), X.end(),
+    auto solutions1 = search_four_square_using_vector(X.begin(), X.end(),
                                          Y.begin(), Y.end(),
                                          Z.begin(), Z.end(),
                                          W.begin(), W.end(), pow_2_k);
     for(auto [x, y, z, w] : solutions1) solutions_total.push_back({convert1(*x, *y), convert1(*z, *w)});
 
     // u = x+iy, t = z+iw+ωと書ける場合(パターン2)
-    auto solutions2 = search_four_square(sqrt2_X.begin(), sqrt2_X.end(),
+    auto solutions2 = search_four_square_using_vector(sqrt2_X.begin(), sqrt2_X.end(),
                                          sqrt2_Y.begin(), sqrt2_Y.end(),
                                          sqrt2_Z_omega.begin(), sqrt2_Z_omega.end(),
                                          sqrt2_W_omega.begin(), sqrt2_W_omega.end(), pow_2_k_1);
     for(auto [x, y, z, w] : solutions2) solutions_total.push_back({convert2(*x, *y), convert2(*z, *w)});
 
     // u = x+iy+ω, t = z+iwと書ける場合(パターン3)
-    auto solutions3 = search_four_square(sqrt2_X_omega.begin(), sqrt2_X_omega.end(),
+    auto solutions3 = search_four_square_using_vector(sqrt2_X_omega.begin(), sqrt2_X_omega.end(),
                                          sqrt2_Y_omega.begin(), sqrt2_Y_omega.end(),
                                          sqrt2_Z.begin(), sqrt2_Z.end(),
                                          sqrt2_W.begin(), sqrt2_W.end(), pow_2_k_1);
     for(auto [x, y, z, w] : solutions3) solutions_total.push_back({convert2(*x, *y), convert2(*z, *w)});
 
     // u = x+iy+ω, t = z+iw+ωと書ける場合(パターン4)
-    auto solutions4 = search_four_square(sqrt2_X_omega.begin(), sqrt2_X_omega.end(),
+    auto solutions4 = search_four_square_using_vector(sqrt2_X_omega.begin(), sqrt2_X_omega.end(),
                                          sqrt2_Y_omega.begin(), sqrt2_Y_omega.end(),
                                          sqrt2_Z_omega.begin(), sqrt2_Z_omega.end(),
                                          sqrt2_W_omega.begin(), sqrt2_W_omega.end(), pow_2_k_1);
