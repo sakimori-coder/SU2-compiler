@@ -1,0 +1,4 @@
+terminate called after throwing an instance of 'terminate called after throwing an instance of 'std::bad_alloc'
+std::bad_alloc'
+terminate called recursively
+/var/spool/pbs/mom_priv/jobs/198759.CPUcluster-PRISM.SC: line 10: 47865 Aborted                 (core dumped) ./a.out > log2.txt
