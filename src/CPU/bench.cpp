@@ -9,10 +9,10 @@ int main(){
     uniform_real_distribution<double> distr(0.0, 2*M_PI);
 
     vector<double> epsilons;
-    double eps = 1e-8;
-    while(eps >= 1e-10){
+    double eps = sqrt(0.1);
+    while(eps >= 1e-9){
         epsilons.push_back(eps);
-        eps = eps / 10;
+        eps = eps / 10.0;
     }
 
     cout << "精度, MAX, MIN, 平均, 標準偏差" << endl;
@@ -23,7 +23,7 @@ int main(){
             double theta1 = distr(eng);
             double theta2 = distr(eng);
             double theta3 = distr(eng);
-            cout << i << endl;
+            // cout << i << endl;
             complex<double> u = exp(1.0i*theta1)*cos(theta2);
             complex<double> t = exp(1.0i*theta3)*sin(theta2);
 
