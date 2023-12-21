@@ -1,7 +1,7 @@
 bench.sh
 example.sh
 log*
-a.e[0-9]
+aaa.e[0-9]
 *.o[0-9]+
 SU2-compiler-bench.e[0-9]+
 SU2-compiler-bench.o[0-9]+
