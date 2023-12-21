@@ -114,6 +114,7 @@ Pair_ZOmega<T> _solve_u_t(std::complex<double> u, std::complex<double> t, double
                                          sqrt2_W_omega.begin(), sqrt2_W_omega.end(), pow_2_k_1);
     for(auto [x, y, z, w] : solutions4) solutions_total.push_back({convert2(*x, *y), convert2(*z, *w)});
 
+
     double min_error = eps + 1.0;    // 初期値はepsより大きい適当な値
     Pair_ZOmega<T> ret;
     for(auto P : solutions_total){

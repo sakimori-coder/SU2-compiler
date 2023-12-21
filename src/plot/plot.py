@@ -43,24 +43,28 @@ RS_MAX = [3, 26, 48, 64, 78, 94, 110, 126, 142, 158, 172, 186, 202, 216, 232, 24
 RS_MIN = [0, 0, 12, 21, 49, 53, 90, 83, 124, 142, 154, 162, 184, 200, 216, 230, 248, 262, 274, 292]
 RS_mean = [1.34, 12.07, 36.05, 54.53, 70.85, 85.53, 103.2, 118.23, 133.9, 149.48, 164.72, 179.22, 194.18, 209.4, 225.38, 239.8, 254.92, 269.46, 285.48, 300.76]
 
+# RS_MAX = [26, 48, 62, 78, 98, 112, 128, 140, 154, 174, 186, 200, 220, 232, 248, 262, 276, 294, 304, 322]
+# RS_MIN = [0, 10, 15, 46, 72, 94, 104, 120, 138, 154, 172, 180, 198, 216, 230, 244, 256, 272, 288, 304]
+# RS_mean = [11.78, 33.84, 53.44, 69.65, 86.1, 102.54, 117.64, 132.34, 148.38, 163.34, 178.42, 193.48, 208.48, 224.66, 239.06, 254.04, 269.0, 284.86, 299.42, 314.42]
+
 
 clr = plt.cm.Purples(0.9)
 fig, ax = plt.subplots()
-ax.scatter(x, mean, label="提案 : 平均値", color="purple")
-ax.fill_between(x, MIN, MAX, alpha=0.3, edgecolor="purple", facecolor="purple", label="提案 : 最小値-最大値")
-ax.plot(x_3log, y_3log, "--", color="purple", label="$3log_{2}(1/\epsilon)$")
+ax.scatter(x, mean, label="Propose : ave", color="purple")
+ax.fill_between(x, MIN, MAX, alpha=0.2, edgecolor="purple", facecolor="purple", label="Propose : min-max")
+ax.plot(x_3log, y_3log, "--", color="purple", label="$3$log$_{2}(1/\epsilon)$")
 ax.grid()
 
-ax.scatter(Rs_x, RS_mean, label="RS : 平均値", color="g")
-ax.fill_between(Rs_x, RS_MIN, RS_MAX, alpha=0.3, edgecolor="g", facecolor="g", label="RS : 最小値-最大値")
-ax.plot(x_3log, y_9log, "--", color="g", label="$9log_{2}(1/\epsilon)$")
+ax.scatter(Rs_x, RS_mean, label="RS : ave", color="g", marker="^")
+ax.fill_between(Rs_x, RS_MIN, RS_MAX, alpha=0.2, edgecolor="g", facecolor="g", label="RS : min-max", hatch="///")
+ax.plot(x_3log, y_9log, ":", color="g", label="$9$log$_{2}(1/\epsilon)$")
 
 
 ax.set_xscale("log")
 x.reverse()
 ax.set_xticks(x)
 ax.invert_xaxis()
-ax.set_xlim(0.7, 0.5*1e-10)
+ax.set_xlim(0.2, 0.5*1e-10)
 
 ax.set_xlabel("Approximation accuracy ε", fontsize=18)
 ax.set_ylabel("T-count", fontsize=18)

@@ -5,7 +5,7 @@ using namespace std;
 
 int main(){
     random_device rd;
-    default_random_engine eng(1234);
+    default_random_engine eng(rd());
     uniform_real_distribution<double> distr(0.0, 2*M_PI);
 
     double theta1 = distr(eng);
@@ -20,7 +20,7 @@ int main(){
     // cout << "norm " << abs(u)*abs(u) + abs(t)*abs(t) << endl;
 
 
-    tuple<ZOmega<long>, ZOmega<long>, int> ans = solve_u_t<long>(u, t, 1e-9);
+    tuple<ZOmega<long>, ZOmega<long>, int> ans = solve_u_t<long>(u, t, sqrt(0.1));
     complex<double> u_prime = convert(get<0>(ans), get<2>(ans));
     complex<double> t_prime = convert(get<1>(ans), get<2>(ans));
 
