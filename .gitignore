@@ -1,8 +1,10 @@
 bench.sh
 example.sh
-log*
-*.e[0-9]+
-*.o[0-9]+
+log.*
+.*.e[0-9]+
+.*.o[0-9]+
+SU2-compiler-bench.e\d+
+SU2-compiler-bench.o\d+
 
 # Prerequisites
 *.d
