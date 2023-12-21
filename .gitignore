@@ -1,8 +1,6 @@
 bench.sh
 example.sh
 log*
-aaa.e[0-9]
-*.o[0-9]+
 PBSe/
 PBSo/
 
