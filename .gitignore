@@ -1,5 +1,6 @@
 bench.sh
 example.sh
+*.sh
 log*
 PBSe/
 PBSo/
