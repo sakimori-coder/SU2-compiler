@@ -1,6 +1,9 @@
+#pragma once
+
 #include <complex>
 #include <vector>
 #include <Eigen/Core>
+#include "Rings.cpp"
 
 
 /*
@@ -21,19 +24,28 @@ private:
     
 public:
     quaternion(T a, T b, T c, T d) : a(a), b(b), c(c), d(d) {}
+
+    inline T get_a() const {return a;}
+    inline T get_b() const {return b;}
+    inline T get_c() const {return c;}
+    inline T get_d() const {return d;}
     
     // ハミルトン積
-    quaternion operator*(const quaternion<T>& o){
+    inline quaternion operator*(const quaternion<T>& o){
         return quaternion(a*o.a - b*o.b - c*o.c - d*o.d, 
                           a*o.b + b*o.a + c*o.d - d*o.c,
                           a*o.c - b*o.d + c*o.a + d*o.b,
                           a*o.d + b*o.c - c*o.b + d*o.a);
     }
+
+    inline quaternion operator+(const quaternion<T>& o){
+        return quaternion(a+o.a, b+o.b, c+o.c, d+o.d);
+    }
     
     // 共役作用(ユニタリの随伴に相当)
     quaternion<T> conj() {return {a, -b, -c, -d}; }
 
-    T norm() {return std::sqrt(a*a + b*b + c*c + d*d);}
+    T norm() {return sqrt(a*a + b*b + c*c + d*d);}
 
     std::tuple<T, T, T, T> get_abcd() {return {a,b,c,d};}
     
@@ -68,13 +80,13 @@ public:
 };
 
 template<typename T>
-quaternion<T> operator*(const T& x, const quaternion<T>& y){
-    return quaternion(x*y.a, x*y.b, x*y.c, x*y.d);
+inline quaternion<T> operator*(const T& x, const quaternion<T>& y){
+    return quaternion(x*y.get_a(), x*y.get_b(), x*y.get_c(), x*y.get_d());
 }
 
 template<typename T>
-quaternion<T> operator*(const quaternion<T>& x, const T& y){
-    return quaternion(x.a*y, x.b*y, x.c*y, x.d*y);
+inline quaternion<T> operator*(const quaternion<T>& x, const T& y){
+    return quaternion(x.get_a()*y, x.get_b()*y, x.get_c()*y, x.get_d()*y);
 }
 
 
@@ -82,7 +94,7 @@ template<typename T>
 T distance(quaternion<T> u, quaternion<T> v){
     quaternion<T> uv_dag = u * v.conj();
     T tr = uv_dag.trace();
-    return std::sqrt(4 - tr*tr);
+    return sqrt(4 - tr*tr);
 }
 
 template<typename T>
@@ -90,3 +102,13 @@ quaternion<T> convert_quaternion(Eigen::Matrix<T, 4, 1> v){
     quaternion<T> ret(v(0), v(1), v(2), v(3));
     return ret;
 } 
+
+
+template<typename ITYPE, typename FTYPE>
+quaternion<FTYPE> to_quaterion(ZOmega<ITYPE> x, ZOmega<ITYPE> y){
+    FTYPE a = (FTYPE)x.d + (FTYPE)(x.c - x.a) * sqrt(2.0) / 2.0;
+    FTYPE b = (FTYPE)x.b + (FTYPE)(x.c + x.a) * sqrt(2.0) / 2.0;
+    FTYPE c = (FTYPE)y.d + (FTYPE)(y.c - y.a) * sqrt(2.0) / 2.0;
+    FTYPE d = (FTYPE)y.b + (FTYPE)(y.c + y.a) * sqrt(2.0) / 2.0;
+    return quaternion<FTYPE>(a,b,c,d);
+}

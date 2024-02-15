@@ -127,7 +127,6 @@ Pair_ZOmega<T> _solve_u_t(std::complex<double> u, std::complex<double> t, double
         }
     }
 
-
     if(min_error < eps) return ret;
     else return {};
 }
