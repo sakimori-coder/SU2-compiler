@@ -44,10 +44,14 @@ std::vector<ZRoot2<T>> one_dim_grid_problem(FTYPE x0, FTYPE x1, FTYPE y0, FTYPE 
         }
     }
 
+    FTYPE sqrt2 = sqrt(2.0);
+    FTYPE sqrt8 = 2.0 * sqrt2;
     std::vector<ZRoot2<T>> solutions;
     
-    for(T a = (T)(ceil((x0+y0) / 2)); a < (T)(floor((x1+y1) / 2)) + 1; a++){
-        for(T b = (T)(ceil((a-y1) / sqrt(2.0))); b < (T)(floor((a-y0) / sqrt(2.0))) + 1; b++){
+    // for(T a = (T)(ceil((x0+y0) / 2)); a < (T)(floor((x1+y1) / 2)) + 1; a++){
+    //     for(T b = (T)(ceil((a-y1) / sqrt(2.0))); b < (T)(floor((a-y0) / sqrt(2.0))) + 1; b++){
+    for(T b = (T)ceil((x0-y1) / sqrt8); b <= (T)(floor((x1-y0)) / sqrt8); b++){
+        for(T a = (T)ceil(x0-(FTYPE)b*sqrt2); a <= (T)floor(x1-(FTYPE)b*sqrt2); a++){
             ZRoot2<T> candidate = {a,b};
             FTYPE cand_FTYPE = convert(candidate);
             FTYPE conj_candi_FTYPE = convert(conj(candidate));

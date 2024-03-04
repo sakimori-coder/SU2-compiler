@@ -1,52 +1,12 @@
 #include <bits/stdc++.h>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 
-#include "quaternion.cpp"
+#include "quaternion.hpp"
+#include "linalg.hpp"
 #include <Eigen/Core>
 
 using std::cout;
 using std::endl;
-
-// Ax=bの掃き出し法　計算量O(NM*min(N,M))
-template<typename T, int N, int M>
-std::pair<Eigen::Matrix<T, N, M>, Eigen::Matrix<T, N, 1>> 
-row_reduction(Eigen::Matrix<T, N, M> A, Eigen::Matrix<T, N, 1> b)
-{
-    for(int k = 0; k < std::min(N, M); k++){
-        T a_kk = A(k,k);
-        for(int j = 0; j < M; j++) A(k,j) /= a_kk;
-        b(k) /= a_kk;
-
-        for(int i = 0; i < N; i++){
-            if(i == k) continue;
-            T a_ik = A(i,k);
-            for(int j = 0; j < M; j++) A(i,j) -= a_ik*A(k, j);
-            b(i) -= a_ik*b(k);
-        }
-    }
-
-    return {A, b};
-}
-
-
-/*
-グラム・シュミットの正規直交化  
-入力 : a_i (i=1,...,M)を正規直交化したいN次元のベクトルとすると、A = (a_1,...,a_M)で与える
-出力 : 正規直交化された基底を並べた行列 V = (v_1,...,v_M)を返す
-*/
-template<typename T, int N, int M>
-Eigen::Matrix<T, N, M> Gram_Schmidt(Eigen::Matrix<T, N, M> A)
-{
-    Eigen::Matrix<T, N, M> V;
-    for(int i = 0; i < M; i++){
-        Eigen::Matrix<T, N, 1> v = A.col(i);
-        for(int j = 0; j < i; j++) v -= V.col(j).dot(A.col(i)) * V.col(j);
-        v = v / v.norm();
-        V.col(i) = v;
-    }
-
-    return V;
-}
 
 
 /*
@@ -62,19 +22,16 @@ bool check_inter_2ball(quaternion<T> u1, quaternion<T> u2, T eps)
     auto [a21, a22, a23, a24] = u2.get_abcd();
     A << a11, a12, a13, a14,
          a21, a22, a23, a24;
-    b << sqrt(1 - (eps*eps / 4)), sqrt(1 - (eps*eps / 4));
+    b << sqrt(1 - eps*eps), sqrt(1 - eps*eps);
+
+    auto [V, inter] = solve_linear_system<T, 2, 4>(A, b);
+
+    Eigen::Matrix<T, 4, 2> OC = Gram_Schmidt<T, 4, 2>(A.transpose());   // Ax=0が張る平面の直交補空間の正規直交基底
+
+    T dot0 = inter.dot(OC.col(0));
+    T dot1 = inter.dot(OC.col(1));
+    T dist = sqrt(dot0*dot0 + dot1*dot1);   // Ax=bが張る平面と原点との距離
     
-    auto[Ar, br] = row_reduction<T, 2, 4>(A, b);
-
-    Eigen::Matrix<T, 4, 1> inter;   // Ax=bが張る平面の切片
-    inter = Eigen::Matrix<T, 4, 1>::Zero(4);
-    for(int i = 0; i < 2; i++) inter(i) = br(i);   // intercept=[br1, br2, 0, 0]
-    Eigen::Matrix<T, 4, 2> V = Gram_Schmidt<T, 4, 2>(A.transpose());   // Ax=0が張る平面の直交補空間の正規直交基底
-
-    T v0_dot = inter.dot(V.col(0));
-    T v1_dot = inter.dot(V.col(1));
-    T dist = sqrt(v0_dot*v0_dot + v1_dot*v1_dot);   // Ax=bが張る平面と原点との距離
-
     if(dist <= (T)1.0) return true;
     else return false;
 }
@@ -93,23 +50,13 @@ quaternion<T> cal_inter_2ball(quaternion<T> u1, quaternion<T> u2, T eps)
     auto [a21, a22, a23, a24] = u2.get_abcd();
     A << a11, a12, a13, a14,
          a21, a22, a23, a24;
-    b << sqrt(1 - (eps*eps / 4)), sqrt(1 - (eps*eps / 4));
-    
-    auto[Ar, br] = row_reduction<T, 2, 4>(A, b);
+    b << sqrt(1 - eps*eps), sqrt(1 - eps*eps);
+
+    auto [V, inter] = solve_linear_system<T, 2, 4>(A, b);
 
     Eigen::Matrix<T, 4, 1> v1, v2;
-    Eigen::Matrix<T, 4, 1> inter;   // Ax=bが張る平面の切片
-    inter = Eigen::Matrix<T, 4, 1>::Zero(4);
-
-    for(int i = 0; i < 2; i++) v1(i) = -Ar(i, 2);
-    v1(2) = 1; v1(3) = 0;
-    for(int i = 0; i < 2; i++) v2(i) = -Ar(i, 3);
-    v2(2) = 0; v2(3) = 1;
-    for(int i = 0; i < 2; i++) inter(i) = br(i);   // intercept=[br1, br2, 0, 0]
-
-    v1 = v1 / v1.norm();
-    v2 = v2 - v2.dot(v1)*v1;   // 直交化
-    v2 = v2 / v2.norm();
+    v1 = V.col(0);
+    v2 = V.col(1);
 
     Eigen::Matrix<T, 2, 1> mu;
     mu << v1.dot(inter), v2.dot(inter);
@@ -128,6 +75,65 @@ quaternion<T> cal_inter_2ball(quaternion<T> u1, quaternion<T> u2, T eps)
 }
 
 
+template<typename T>
+quaternion<T> cal_inter_2ball(quaternion<T> u1, quaternion<T> u2, quaternion<T> u_target, T eps)
+{
+    Eigen::Matrix<T, 4, 1> u;
+    u << u_target.get_a(), u_target.get_b(), u_target.get_c(), u_target.get_d();
+    Eigen::Matrix<T, 2, 4> A;
+    Eigen::Matrix<T, 2, 1> b;
+    auto [a11, a12, a13, a14] = u1.get_abcd();
+    auto [a21, a22, a23, a24] = u2.get_abcd();
+    A << a11, a12, a13, a14,
+         a21, a22, a23, a24;
+    b << sqrt(1 - eps*eps), sqrt(1 - eps*eps);
+
+    auto [V, inter] = solve_linear_system<T, 2, 4>(A, b);
+
+    Eigen::Matrix<T, 4, 1> v1, v2;
+    v1 = V.col(0);
+    v2 = V.col(1);
+
+    Eigen::Matrix<T, 2, 1> mu;
+    mu << v1.dot(inter), v2.dot(inter);
+
+    T c = 1.0 - inter.dot(inter) + mu.dot(mu);
+    inter = inter - mu(0)*v1 - mu(1)*v2;
+
+    T u_v1 = u.dot(v1);
+    T square_u_v1 = u_v1*u_v1;
+    T square_u_v2 = u.dot(v2)*u.dot(v2);
+    T s = sqrt(square_u_v1*c / (square_u_v1 + square_u_v2));
+    T t = sqrt(c - s*s);
+
+    std::vector<quaternion<T>> cand;
+    cand.push_back(convert_quaternion<T>( s*v1 + t*v2 + inter));
+    cand.push_back(convert_quaternion<T>(-s*v1 - t*v2 + inter));
+    cand.push_back(convert_quaternion<T>( s*v1 - t*v2 + inter));
+    cand.push_back(convert_quaternion<T>(-s*v1 + t*v2 + inter));
+
+
+    std::vector<T> dist(4);
+    for(int i = 0; i < 4; i++) dist[i] = distance(u_target, cand[i]);
+
+    auto max_it = std::max_element(dist.begin(), dist.end());
+    auto min_it = std::min_element(dist.begin(), dist.end());
+
+
+    quaternion<T> ret = cand[0];
+    T min_dist = dist[0];
+    for(int i = 1; i < 4; i++){
+        if(dist[i] < min_dist){
+            min_dist = dist[i];
+            ret = cand[i];
+        }
+    }
+
+    return ret;
+}
+
+
+
 /*
 B(u1,ε)とB(u2,ε)とB(u3,ε)が交わる点を計算する。
 出力 : 交わるならば、交わる2点を出力する。交わらなければ,(0,0,0,0)を返す。
@@ -143,17 +149,9 @@ std::pair<quaternion<T>, quaternion<T>> cal_inter_3ball(quaternion<T> u1, quater
     A << a11, a12, a13, a14, 
          a21, a22, a23, a24, 
          a31, a32, a33, a34;
-    b << sqrt(1 - (eps*eps / 4)), sqrt(1 - (eps*eps / 4)), sqrt(1 - (eps*eps / 4));
+    b << sqrt(1 - eps*eps), sqrt(1 - eps*eps), sqrt(1 - eps*eps);
     
-    auto [Ar, br] = row_reduction<T, 3, 4>(A, b);
-    
-    Eigen::Matrix<T, 4, 1> v;       // Ax=bが張る直線の方向ベクトル
-    Eigen::Matrix<T, 4, 1> inter;   // Ax=bが張る直線の切片
-    inter = Eigen::Matrix<T, 4, 1>::Zero(4);
-    
-    for(int i = 0; i < 3; i++) v(i) = -Ar(i, 3);   // v = [-Ar03,-Ar13,-Ar23, 1]   
-    v(3) = 1;
-    for(int i = 0; i < 3; i++) inter(i) = br(i);   // intercept=[br1, br2, br3, 0]
+    auto [v, inter] = solve_linear_system<T, 3, 4>(A, b);
 
     // 二次方程式の係数(bbは変数名が被るから)
     T a = v.norm() * v.norm();
@@ -180,27 +178,30 @@ std::pair<quaternion<T>, quaternion<T>> cal_inter_3ball(quaternion<T> u1, quater
 template<typename T>
 bool check_eps_net(std::vector<quaternion<T>> X, quaternion<T> U_target, T eps){  
     int N = X.size();
+    if(N == 0) return false;
 
     bool success = true;
 #pragma omp parallel for
     for(int i = 0; i < N; i++){
         // cout << i << endl;
-        bool flag_cross_i = false;
+        bool flag_cross_i = false;   // B(x_i)がB(u_target)内で他のε-ballと交点を持つならtrue
 #pragma omp parallel for
         for(int j = 0; j < N; j++){
             if(i == j) continue;
             if(!check_inter_2ball(X[i], X[j], eps)) continue;
-            flag_cross_i = true;
-            bool flag_cross_j = false;
+            // この時点では分からない flag_cross_i = true;
+            bool flag_cross_j = false;   // B(x_i)とB(x_j)の交じわる領域がB(u_target)内で他のε-ballと交点を持つならtrue
 #pragma omp parallel for
             for(int k = 0; k < N; k++){
                 if(k == i || k == j) continue;
                 auto [inter1, inter2] = cal_inter_3ball(X[i], X[j], X[k], eps);
 
                 if(!inter1.is_unitary() || !inter2.is_unitary()) continue;
-    
-                
-                if(distance(inter1, U_target) < 2*eps){   // 2ε-ballに含まれる
+
+
+                // if(distance(inter1, U_target) < 2*eps){   // 2ε-ballに含まれる
+                if(distance(inter1, U_target) < eps){   // ε-ballに含まれる
+                    flag_cross_i = true;
                     flag_cross_j = true;
                     bool flag_in = false;
 #pragma omp parallel for
@@ -211,30 +212,46 @@ bool check_eps_net(std::vector<quaternion<T>> X, quaternion<T> U_target, T eps){
                     if(!flag_in) success = false;
                 }
 
-                if(distance(inter2, U_target) < 2*eps){   // 2ε-ballに含まれる
+                // if(distance(inter2, U_target) < 2*eps){   // 2ε-ballに含まれる
+                if(distance(inter2, U_target) < eps){   // ε-ballに含まれる
+                    flag_cross_i = true;
                     flag_cross_j = true;
                     bool flag_in = false;
 #pragma omp parallel for
                     for(int l = 0; l < N; l++){
                         if(l == i || l == j || l == k) continue;
+                        // cout << eps - distance(inter2, X[l]) << endl; 
                         if(distance(inter2, X[l]) < eps) flag_in = true; 
                     }
-                    if(!flag_in) success = false;
+                    if(!flag_in) {success = false;}
                 }
             }   // kのループ
 
             if(!flag_cross_j){
                 bool flag_in = false;
-                quaternion<T> inter = cal_inter_2ball(X[i], X[j], eps);
+                quaternion<T> inter = cal_inter_2ball(X[i], X[j], U_target, eps);
+                if(distance(inter, U_target) > eps) continue;   // ε-ballに含まれない
+                flag_cross_i = true;  
 #pragma omp parallel for
                 for(int k = 0; k < N; k++){
                     if(k == i || k == j) continue;
                     if(distance(inter, X[k]) < eps) flag_in = true;
                 }
-                if(!flag_in) success = false; 
+                if(!flag_in) {success = false;} 
             }
         }   // jのループ
-        if(!flag_cross_i) success = false;
+        if(!flag_cross_i){
+            quaternion<T> inter = cal_inter_2ball(X[i], U_target, eps);
+            if(!inter.is_unitary()) {success = false;}   // 一応書いてるけど、必ず交点は持つはず
+
+            bool flag_in = false;
+            for(int j = 0; j < N; j++){
+                if(j == i) continue;
+                if(distance(inter, X[j]) < eps) flag_in = true;
+            }
+            if(!flag_in) {success = false;}
+            
+        }
     }   // iのループ
     
     if(success) return true;

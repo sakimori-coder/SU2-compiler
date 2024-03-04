@@ -3,6 +3,7 @@ example.sh
 log*
 PBSe/
 PBSo/
+.vscode/
 
 # Prerequisites
 *.d

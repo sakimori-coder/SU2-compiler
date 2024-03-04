@@ -3,7 +3,7 @@
 #include <Eigen/Core>
 
 namespace mp = boost::multiprecision;
-// using namespace std;
+using namespace std;
 
 int main(){
     mp::cpp_dec_float_100 x = 2.0f;
@@ -23,4 +23,9 @@ int main(){
     std::cout << pow(y, y) << std::endl;
     std::cout << std::setprecision(40) << 1 / (mp::cpp_dec_float_100)3.0 << std::endl;
     std::cout << std::setprecision(40) << 1 / 3.0 << std::endl; 
+
+    mp::cpp_dec_float_100 z = 0.5;
+    double w = (double)mp::cpp_dec_float_100("1.4");
+    cout << setprecision(40) << z << endl;
+    cout << setprecision(40) << mp::cpp_dec_float_100("1.4") << endl;
 }

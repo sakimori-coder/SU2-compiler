@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bits/stdc++.h>
+#include <execution>
 
 template<class RandomAccessIterator>
 using Pair_Iterator = std::pair<RandomAccessIterator, RandomAccessIterator>;
@@ -200,6 +201,7 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square_using_vecto
 
     std::vector<T> XY(N1*N2), ZW(N3*N4);
 
+
     for(int i = 0; i < N1; i++){
         for(int j = 0; j < N2; j++) XY[i*N2 + j] = X_squared[i] + Y_squared[j];
     }
@@ -207,10 +209,10 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square_using_vecto
         for(int j = 0; j < N4; j++) ZW[i*N4 + j] = Z_squared[i] + W_squared[j];
     } 
 
-
-    std::sort(XY.begin(), XY.end());
-    std::sort(ZW.begin(), ZW.end());
-
+    // std::cout << "aaa" << std::endl;
+    std::sort(std::execution::par, XY.begin(), XY.end());
+    std::sort(std::execution::par, ZW.begin(), ZW.end());
+    // std::cout << "bbb" << std::endl;
 
     auto solutions = two_points_technique(XY.begin(), XY.end(), ZW.begin(), ZW.end(), key);
 
