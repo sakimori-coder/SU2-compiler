@@ -19,8 +19,7 @@ int main(){
     cout << "t " << t << endl;
     // cout << "norm " << abs(u)*abs(u) + abs(t)*abs(t) << endl;
 
-
-    tuple<ZOmega<long>, ZOmega<long>, int> ans = solve_u_t<long>(u, t, sqrt(0.1));
+    tuple<ZOmega<long>, ZOmega<long>, int> ans = solve_u_t<long>(u, t, 1e-7);
     complex<double> u_prime = convert(get<0>(ans), get<2>(ans));
     complex<double> t_prime = convert(get<1>(ans), get<2>(ans));
 

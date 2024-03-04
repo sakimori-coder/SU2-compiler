@@ -5,8 +5,8 @@
 
 using namespace std;
 namespace mp = boost::multiprecision;
-using float50 = mp::cpp_dec_float_50;
-// using float50 = double;
+// using float50 = mp::cpp_dec_float_50;
+using float50 = double;
 
 int main(){
     random_device rd;
@@ -24,16 +24,18 @@ int main(){
     double x3 = sin(psi) * sin(theta) * sin(phi);
 
     quaternion<float50> U(x0, x1, x2, x3);
-    float50 eps = 1e-3 * 1.26;
-    int k = 18;
+    for(int i = 0; i < 1; i++){
+        float50 eps = 0.9*1e-3;
+        // float50 eps = 1e-3 * (double)i / 10.0;
+        int k = 18;
 
-    vector<quaternion<float50>> X = enumerate_u_t<long long, float50>(U, eps, k);
+        vector<quaternion<float50>> X = enumerate_u_t<long long, float50>(U, eps, k);
 
-    // for(int i = 0; i < 106; i++) X.pop_back();
+        // for(int i = 0; i < 106; i++) X.pop_back();
 
-    cout << "|X| = " << X.size() << endl;
-
-
-    if(check_eps_net<float50>(X, U, eps/2.0)) cout << "OK" << endl;
-    else cout << "NG" << endl;
+        cout << "|X| = " << X.size() << endl;
+        
+        if(check_eps_net<float50>(X, U, eps/2.0)) cout << "OK" << endl;
+        else cout << "NG" << endl;
+    }
 }

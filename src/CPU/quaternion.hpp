@@ -41,6 +41,19 @@ public:
     inline quaternion operator+(const quaternion<T>& o){
         return quaternion(a+o.a, b+o.b, c+o.c, d+o.d);
     }
+
+    inline quaternion operator-(const quaternion<T>& o){
+        return quaternion(a-o.a, b-o.b, c-o.c, d-o.d);
+    }
+
+
+    inline quaternion operator-(){
+        return quaternion(-a,-b,-c,-d);
+    }
+
+    inline quaternion operator/(const T& o){
+        return quaternion(a / o, b / o, c / o, d / o);
+    }
     
     // 共役作用(ユニタリの随伴に相当)
     quaternion<T> conj() {return {a, -b, -c, -d}; }
@@ -73,6 +86,14 @@ public:
         else return false;    
     }
 
+    void unitalize(){
+        T n = this->norm();
+        a /= n;
+        b /= n;
+        c /= n;
+        d /= n;
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const quaternion<T>& u){
         os << "(" << u.a << ", " << u.b << ", " << u.c << ", " << u.d << ")";
         return os;       
@@ -90,11 +111,12 @@ inline quaternion<T> operator*(const quaternion<T>& x, const T& y){
 }
 
 
+// 1/2||u - v||◇を計算
 template<typename T>
 T distance(quaternion<T> u, quaternion<T> v){
     quaternion<T> uv_dag = u * v.conj();
     T tr = uv_dag.trace();
-    return sqrt(4 - tr*tr);
+    return sqrt(1 - (tr*tr / 4.0));
 }
 
 template<typename T>
@@ -111,4 +133,21 @@ quaternion<FTYPE> to_quaterion(ZOmega<ITYPE> x, ZOmega<ITYPE> y){
     FTYPE c = (FTYPE)y.d + (FTYPE)(y.c - y.a) * sqrt(2.0) / 2.0;
     FTYPE d = (FTYPE)y.b + (FTYPE)(y.c + y.a) * sqrt(2.0) / 2.0;
     return quaternion<FTYPE>(a,b,c,d);
+}
+
+
+template<typename T>
+quaternion<T> random_unitary(size_t seed=-1){
+    std::random_device rd;
+    std::default_random_engine eng(rd());
+    if(seed != -1) eng.seed(seed);
+    std::uniform_real_distribution<double> distr(-1.0, 1.0);
+
+    T a = distr(eng);
+    T b = distr(eng);
+    T c = distr(eng);
+    T d = distr(eng);
+    quaternion<T> runitary(a,b,c,d);
+    runitary.unitalize();
+    return runitary;
 }

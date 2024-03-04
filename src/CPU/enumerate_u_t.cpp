@@ -5,7 +5,7 @@
 #include "Rings.cpp"
 #include "grid_solve.cpp"
 #include "search_four_square.cpp"
-#include "quaternion.cpp"
+#include "quaternion.hpp"
 
 
 template<typename T>
@@ -23,14 +23,17 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
     FTYPE c = U.get_c();
     FTYPE d = U.get_d();
 
-    const FTYPE sqrt2k = pow(sqrt((FTYPE)2.0), (FTYPE)k);
+    const FTYPE sqrt2 = sqrt((FTYPE)2.0);
+    const FTYPE sqrt2k = pow(sqrt2, (FTYPE)k);
     FTYPE y0 =-sqrt2k;
     FTYPE y1 = sqrt2k;
+
 
     std::vector<ZRoot2<ITYPE>> X = one_dim_grid_problem<ITYPE, FTYPE>((a-eps)*sqrt2k, (a+eps)*sqrt2k, y0, y1);
     std::vector<ZRoot2<ITYPE>> Y = one_dim_grid_problem<ITYPE, FTYPE>((b-eps)*sqrt2k, (b+eps)*sqrt2k, y0, y1);
     std::vector<ZRoot2<ITYPE>> Z = one_dim_grid_problem<ITYPE, FTYPE>((c-eps)*sqrt2k, (c+eps)*sqrt2k, y0, y1);
     std::vector<ZRoot2<ITYPE>> W = one_dim_grid_problem<ITYPE, FTYPE>((d-eps)*sqrt2k, (d+eps)*sqrt2k, y0, y1);
+
 
     FTYPE inv_sqrt2 = 1.0 / sqrt(2.0);
     y0 += inv_sqrt2;
@@ -99,13 +102,16 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
                                          sqrt2_W_omega.begin(), sqrt2_W_omega.end(), pow_2_k_1);
     for(auto [x, y, z, w] : solutions4) solutions_total.push_back({convert2(*x, *y), convert2(*z, *w)});
 
-    std::cout << solutions_total.size() << std::endl;
-
     std::vector<quaternion<FTYPE>> ret;
     for(auto [x,y] : solutions_total){
         quaternion<FTYPE> V = to_quaterion<ITYPE, FTYPE>(x, y);
-        V = V * (1.0/ V.norm());
-        if(distance(U, V) < eps) ret.push_back(V);
+        V = V / V.norm();
+        if(distance(U, V) <= eps){
+            quaternion<FTYPE> cand1 = U - V;
+            quaternion<FTYPE> cand2 = U + V;
+            if(cand1.norm() < cand2.norm()) ret.push_back(V);
+            else ret.push_back(-V);
+        }
     }
 
     return ret;
