@@ -128,10 +128,11 @@ quaternion<T> convert_quaternion(Eigen::Matrix<T, 4, 1> v){
 
 template<typename ITYPE, typename FTYPE>
 quaternion<FTYPE> to_quaterion(ZOmega<ITYPE> x, ZOmega<ITYPE> y){
-    FTYPE a = (FTYPE)x.d + (FTYPE)(x.c - x.a) * sqrt(2.0) / 2.0;
-    FTYPE b = (FTYPE)x.b + (FTYPE)(x.c + x.a) * sqrt(2.0) / 2.0;
-    FTYPE c = (FTYPE)y.d + (FTYPE)(y.c - y.a) * sqrt(2.0) / 2.0;
-    FTYPE d = (FTYPE)y.b + (FTYPE)(y.c + y.a) * sqrt(2.0) / 2.0;
+    const FTYPE sqrt2 = sqrt((FTYPE)2.0);
+    FTYPE a = (FTYPE)x.d + (FTYPE)(x.c - x.a) * sqrt2 / 2.0;
+    FTYPE b = (FTYPE)x.b + (FTYPE)(x.c + x.a) * sqrt2 / 2.0;
+    FTYPE c = (FTYPE)y.d + (FTYPE)(y.c - y.a) * sqrt2 / 2.0;
+    FTYPE d = (FTYPE)y.b + (FTYPE)(y.c + y.a) * sqrt2 / 2.0;
     return quaternion<FTYPE>(a,b,c,d);
 }
 

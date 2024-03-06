@@ -29,7 +29,7 @@ Eigen::Matrix<T, 4, 4> CJ_MB(Eigen::Matrix<std::complex<T>, 2, 2> U){
     Eigen::Matrix<std::complex<T>, 4, 4> CJ_U = Choi_Jamiolkowski<std::complex<T>, 2>(U);
 
     std::complex<T> i(0., 1.);
-    T sqrt2_inv = 1 / sqrt(2.0);
+    T sqrt2_inv = 1 / sqrt((T)2.0);
     std::complex<T> isqrt2_inv(0, sqrt2_inv);
     Eigen::Matrix<std::complex<T>, 4, 4> M = Eigen::Matrix<std::complex<T>, 4, 4>::Zero(4,4);
     M(0,0) = sqrt2_inv;

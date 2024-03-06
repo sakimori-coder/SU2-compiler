@@ -22,7 +22,8 @@ bool check_inter_2ball(quaternion<T> u1, quaternion<T> u2, T eps)
     auto [a21, a22, a23, a24] = u2.get_abcd();
     A << a11, a12, a13, a14,
          a21, a22, a23, a24;
-    b << sqrt(1 - eps*eps), sqrt(1 - eps*eps);
+    T tmp = (T)1.0 - eps*eps;
+    b << sqrt(tmp), sqrt(tmp);
 
     auto [V, inter] = solve_linear_system<T, 2, 4>(A, b);
 
@@ -50,7 +51,8 @@ quaternion<T> cal_inter_2ball(quaternion<T> u1, quaternion<T> u2, T eps)
     auto [a21, a22, a23, a24] = u2.get_abcd();
     A << a11, a12, a13, a14,
          a21, a22, a23, a24;
-    b << sqrt(1 - eps*eps), sqrt(1 - eps*eps);
+    T tmp = (T)1.0 - eps*eps;
+    b << sqrt(tmp), sqrt(tmp);
 
     auto [V, inter] = solve_linear_system<T, 2, 4>(A, b);
 
@@ -86,7 +88,8 @@ quaternion<T> cal_inter_2ball(quaternion<T> u1, quaternion<T> u2, quaternion<T> 
     auto [a21, a22, a23, a24] = u2.get_abcd();
     A << a11, a12, a13, a14,
          a21, a22, a23, a24;
-    b << sqrt(1 - eps*eps), sqrt(1 - eps*eps);
+    T tmp = (T)1.0 - eps*eps;
+    b << sqrt(tmp), sqrt(tmp);
 
     auto [V, inter] = solve_linear_system<T, 2, 4>(A, b);
 
@@ -97,7 +100,7 @@ quaternion<T> cal_inter_2ball(quaternion<T> u1, quaternion<T> u2, quaternion<T> 
     Eigen::Matrix<T, 2, 1> mu;
     mu << v1.dot(inter), v2.dot(inter);
 
-    T c = 1.0 - inter.dot(inter) + mu.dot(mu);
+    T c = (T)1.0 - inter.dot(inter) + mu.dot(mu);
     inter = inter - mu(0)*v1 - mu(1)*v2;
 
     T u_v1 = u.dot(v1);
@@ -149,7 +152,8 @@ std::pair<quaternion<T>, quaternion<T>> cal_inter_3ball(quaternion<T> u1, quater
     A << a11, a12, a13, a14, 
          a21, a22, a23, a24, 
          a31, a32, a33, a34;
-    b << sqrt(1 - eps*eps), sqrt(1 - eps*eps), sqrt(1 - eps*eps);
+    T tmp = (T)1.0 - eps*eps;
+    b << sqrt(tmp), sqrt(tmp), sqrt(tmp);
     
     auto [v, inter] = solve_linear_system<T, 3, 4>(A, b);
 
@@ -197,7 +201,6 @@ bool check_eps_net(std::vector<quaternion<T>> X, quaternion<T> U_target, T eps){
                 auto [inter1, inter2] = cal_inter_3ball(X[i], X[j], X[k], eps);
 
                 if(!inter1.is_unitary() || !inter2.is_unitary()) continue;
-
 
                 // if(distance(inter1, U_target) < 2*eps){   // 2ε-ballに含まれる
                 if(distance(inter1, U_target) < eps){   // ε-ballに含まれる
@@ -278,7 +281,6 @@ bool check_eps_net_single_theread(std::vector<quaternion<T>> X, quaternion<T> U_
                 auto [inter1, inter2] = cal_inter_3ball(X[i], X[j], X[k], eps);
 
                 if(!inter1.is_unitary() || !inter2.is_unitary()) continue;
-    
                 
                 if(distance(inter1, U_target) < 2*eps){   // 2ε-ballに含まれる
                     flag_cross_j = true;

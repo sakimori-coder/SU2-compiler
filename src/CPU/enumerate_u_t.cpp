@@ -35,7 +35,7 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
     std::vector<ZRoot2<ITYPE>> W = one_dim_grid_problem<ITYPE, FTYPE>((d-eps)*sqrt2k, (d+eps)*sqrt2k, y0, y1);
 
 
-    FTYPE inv_sqrt2 = 1.0 / sqrt(2.0);
+    FTYPE inv_sqrt2 = 1.0 / sqrt((FTYPE)2.0);
     y0 += inv_sqrt2;
     y1 += inv_sqrt2;
     std::vector<ZRoot2<ITYPE>> X_omega = one_dim_grid_problem<ITYPE, FTYPE>((a-eps)*sqrt2k - inv_sqrt2, (a+eps)*sqrt2k - inv_sqrt2, y0, y1);
@@ -109,6 +109,7 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
         if(distance(U, V) <= eps){
             quaternion<FTYPE> cand1 = U - V;
             quaternion<FTYPE> cand2 = U + V;
+            std::cout << std::setprecision(20) << V.norm() << std::endl;
             if(cand1.norm() < cand2.norm()) ret.push_back(V);
             else ret.push_back(-V);
         }
