@@ -1,6 +1,6 @@
 #include <bits/stdc++.h>
 #include <Eigen/Core>
-#include "../src/CPU/quaternion.cpp"
+#include "src/CPU/quaternion.hpp"
 
 using namespace std;
 

@@ -109,7 +109,7 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
         if(distance(U, V) <= eps){
             quaternion<FTYPE> cand1 = U - V;
             quaternion<FTYPE> cand2 = U + V;
-            std::cout << std::setprecision(20) << V.norm() << std::endl;
+
             if(cand1.norm() < cand2.norm()) ret.push_back(V);
             else ret.push_back(-V);
         }

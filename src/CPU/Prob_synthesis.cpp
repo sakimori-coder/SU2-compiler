@@ -168,10 +168,10 @@ std::vector<T> get_optimal_prob(std::vector<quaternion<T>> availableU, quaternio
 
 template <typename T>
 void optimal_prob_unitary(int T_count, quaternion<T> targetU){
-    T eps = pow(2.0, -(T)T_count / 3.0);   // T_count = 3log_2(1/eps)をepsについて解いた
+    T eps = pow(2.0, -(T)T_count / 3.0) / 2.0;   // T_count = 3log_2(1/2eps)をepsについて解いた
 
     while(true){
-        std::vector<quaternion<T>> availableU = enumerate_u_t<long long, T>(targetU, eps, T_count / 2);
+        std::vector<quaternion<T>> availableU = enumerate_u_t<long long, T>(targetU, 2.0*eps, T_count / 2);
         std::cout << "eps " << eps << std::endl;
         std::cout << "利用可能なユニタリの数" << availableU.size() << std::endl;
         eps += eps / 10;
@@ -181,7 +181,7 @@ void optimal_prob_unitary(int T_count, quaternion<T> targetU){
             for(auto u : availableU) min_eps = std::min(min_eps, distance(targetU, u));
             std::vector<T> prob = get_optimal_prob<T>(availableU, targetU);
             std::cout << "下限 " << min_eps*min_eps << std::endl;
-            std::cout << diamond_distance(targetU, availableU, prob) << std::endl;
+            std::cout << std::setprecision(20) << diamond_distance(targetU, availableU, prob) << std::endl;
             break;
         }
     }
