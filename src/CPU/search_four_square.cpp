@@ -209,24 +209,21 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square_using_vecto
         for(int j = 0; j < N4; j++) ZW[i*N4 + j] = Z_squared[i] + W_squared[j];
     } 
 
-    // std::cout << "aaa" << std::endl;
     std::sort(std::execution::par, XY.begin(), XY.end());
     std::sort(std::execution::par, ZW.begin(), ZW.end());
-    // std::cout << "bbb" << std::endl;
 
     auto solutions = two_points_technique(XY.begin(), XY.end(), ZW.begin(), ZW.end(), key);
 
-
     std::vector<Tuple_Iterator<RandomAccessIterator>> ret;
     for(auto [left, right] : solutions){
-        std::vector<Pair_Iterator<RandomAccessIterator>> xy_ans, zw_ans;
+        std::set<Pair_Iterator<RandomAccessIterator>> xy_ans, zw_ans;
         
         auto sol_xy_square = two_points_technique(X_squared.begin(), X_squared.end(), Y_squared.begin(), Y_squared.end(), *left);
         for(auto [x_square, y_square] : sol_xy_square){
             std::vector<RandomAccessIterator> x_ans, y_ans;
             for(auto x = first_X; x != last_X; x++) if((*x)*(*x) == *x_square) x_ans.push_back(x);
             for(auto y = first_Y; y != last_Y; y++) if((*y)*(*y) == *y_square) y_ans.push_back(y);
-            for(auto x : x_ans) for(auto y : y_ans) xy_ans.push_back({x, y});
+            for(auto x : x_ans) for(auto y : y_ans) xy_ans.insert({x, y});
         }
 
         auto sol_zw_square = two_points_technique(Z_squared.begin(), Z_squared.end(), W_squared.begin(), W_squared.end(), *right);
@@ -234,7 +231,7 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square_using_vecto
             std::vector<RandomAccessIterator> z_ans, w_ans;
             for(auto z = first_Z; z != last_Z; z++) if((*z)*(*z) == *z_square) z_ans.push_back(z);
             for(auto w = first_W; w != last_W; w++) if((*w)*(*w) == *w_square) w_ans.push_back(w);
-            for(auto z : z_ans) for(auto w : w_ans) zw_ans.push_back({z, w});
+            for(auto z : z_ans) for(auto w : w_ans) zw_ans.insert({z, w});
         }
 
         for(auto [x,y] : xy_ans) for(auto [z,w] : zw_ans) ret.push_back({x,y,z,w});
@@ -244,6 +241,9 @@ std::vector<Tuple_Iterator<RandomAccessIterator>> search_four_square_using_vecto
 
         // ret.push_back({x_ans, y_ans, z_ans, w_ans});
     }
+
+    std::sort(ret.begin(), ret.end());
+    ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
 
     return ret;
 }

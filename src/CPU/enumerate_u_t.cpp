@@ -29,19 +29,20 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
     FTYPE y1 = sqrt2k;
 
 
+    // eps *= sqrt2;
     std::vector<ZRoot2<ITYPE>> X = one_dim_grid_problem<ITYPE, FTYPE>((a-eps)*sqrt2k, (a+eps)*sqrt2k, y0, y1);
     std::vector<ZRoot2<ITYPE>> Y = one_dim_grid_problem<ITYPE, FTYPE>((b-eps)*sqrt2k, (b+eps)*sqrt2k, y0, y1);
     std::vector<ZRoot2<ITYPE>> Z = one_dim_grid_problem<ITYPE, FTYPE>((c-eps)*sqrt2k, (c+eps)*sqrt2k, y0, y1);
     std::vector<ZRoot2<ITYPE>> W = one_dim_grid_problem<ITYPE, FTYPE>((d-eps)*sqrt2k, (d+eps)*sqrt2k, y0, y1);
 
-
     FTYPE inv_sqrt2 = 1.0 / sqrt((FTYPE)2.0);
     y0 += inv_sqrt2;
     y1 += inv_sqrt2;
-    std::vector<ZRoot2<ITYPE>> X_omega = one_dim_grid_problem<ITYPE, FTYPE>((a-eps)*sqrt2k - inv_sqrt2, (a+eps)*sqrt2k - inv_sqrt2, y0, y1);
-    std::vector<ZRoot2<ITYPE>> Y_omega = one_dim_grid_problem<ITYPE, FTYPE>((b-eps)*sqrt2k - inv_sqrt2, (b+eps)*sqrt2k - inv_sqrt2, y0, y1);
-    std::vector<ZRoot2<ITYPE>> Z_omega = one_dim_grid_problem<ITYPE, FTYPE>((c-eps)*sqrt2k - inv_sqrt2, (c+eps)*sqrt2k - inv_sqrt2, y0, y1);
-    std::vector<ZRoot2<ITYPE>> W_omega = one_dim_grid_problem<ITYPE, FTYPE>((d-eps)*sqrt2k - inv_sqrt2, (d+eps)*sqrt2k - inv_sqrt2, y0, y1);
+    std::vector<ZRoot2<ITYPE>> X_omega = one_dim_grid_problem<ITYPE, FTYPE>((a - eps)*sqrt2k - inv_sqrt2, (a + eps)*sqrt2k - inv_sqrt2, y0, y1);
+    std::vector<ZRoot2<ITYPE>> Y_omega = one_dim_grid_problem<ITYPE, FTYPE>((b - eps)*sqrt2k - inv_sqrt2, (b + eps)*sqrt2k - inv_sqrt2, y0, y1);
+    std::vector<ZRoot2<ITYPE>> Z_omega = one_dim_grid_problem<ITYPE, FTYPE>((c - eps)*sqrt2k - inv_sqrt2, (c + eps)*sqrt2k - inv_sqrt2, y0, y1);
+    std::vector<ZRoot2<ITYPE>> W_omega = one_dim_grid_problem<ITYPE, FTYPE>((d - eps)*sqrt2k - inv_sqrt2, (d + eps)*sqrt2k - inv_sqrt2, y0, y1);
+    // eps /= sqrt2;
 
     // ωの1/√2を消すため, 2(x^2 + y^2 + z^2 + w^2) = 2*2^kを満たすx,y,z,wを求める.
     // 候補点を√2倍したもの 
@@ -60,10 +61,11 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
     for(int i = 0; i < Z.size(); i++) sqrt2_Z[i] = {2*Z[i].b, Z[i].a};
     for(int i = 0; i < W.size(); i++) sqrt2_W[i] = {2*W[i].b, W[i].a};
     // √2*(a + b√2 + 1/√2) = (2b + 1) + a√2
-    for(int i = 0; i < X_omega.size(); i++) sqrt2_X_omega[i] = {2*X_omega[i].b - 1, X_omega[i].a};
-    for(int i = 0; i < Y_omega.size(); i++) sqrt2_Y_omega[i] = {2*Y_omega[i].b - 1, Y_omega[i].a};
-    for(int i = 0; i < Z_omega.size(); i++) sqrt2_Z_omega[i] = {2*Z_omega[i].b - 1, Z_omega[i].a};
-    for(int i = 0; i < W_omega.size(); i++) sqrt2_W_omega[i] = {2*W_omega[i].b - 1, W_omega[i].a};
+    for(int i = 0; i < X_omega.size(); i++) sqrt2_X_omega[i] = {2*X_omega[i].b + 1, X_omega[i].a};
+    for(int i = 0; i < Y_omega.size(); i++) sqrt2_Y_omega[i] = {2*Y_omega[i].b + 1, Y_omega[i].a};
+    for(int i = 0; i < Z_omega.size(); i++) sqrt2_Z_omega[i] = {2*Z_omega[i].b + 1, Z_omega[i].a};
+    for(int i = 0; i < W_omega.size(); i++) sqrt2_W_omega[i] = {2*W_omega[i].b + 1, W_omega[i].a};
+
 
     ZRoot2<ITYPE> pow_2_k = (ITYPE)1<<k; 
     ZRoot2<ITYPE> pow_2_k_1 = (ITYPE)1<<(k+1); 
@@ -106,6 +108,12 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
     for(auto [x,y] : solutions_total){
         quaternion<FTYPE> V = to_quaterion<ITYPE, FTYPE>(x, y);
         V = V / V.norm();
+
+        FTYPE d1 = distance(U,V);
+        FTYPE d2 = min(distance_max(U,V), distance_max(U,-V));
+        if(d1 < d2/sqrt2) std::cout << "間違ってる" << std::endl;
+
+
         if(distance(U, V) <= eps){
             quaternion<FTYPE> cand1 = U - V;
             quaternion<FTYPE> cand2 = U + V;

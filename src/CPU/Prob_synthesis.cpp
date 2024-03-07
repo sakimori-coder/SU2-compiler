@@ -172,8 +172,10 @@ void optimal_prob_unitary(int T_count, quaternion<T> targetU){
 
     while(true){
         std::vector<quaternion<T>> availableU = enumerate_u_t<long long, T>(targetU, 2.0*eps, T_count / 2);
-        std::cout << "eps " << eps << std::endl;
+        // std::cout << "eps " << eps << std::endl;
         std::cout << "利用可能なユニタリの数" << availableU.size() << std::endl;
+        // for(auto x : availableU) std::cout << std::setprecision(30) << x << std::endl;
+        // exit(0);
 
         if(check_eps_net(availableU, targetU, eps)){
             T min_eps = 1.0;

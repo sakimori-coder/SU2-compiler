@@ -119,6 +119,14 @@ T distance(quaternion<T> u, quaternion<T> v){
     return sqrt(1 - (tr*tr / 4.0));
 }
 
+// u-vの最大値ノルムを計算
+template <typename T>
+T distance_max(quaternion<T> u, quaternion<T> v){
+    quaternion<T> diff = u -v;
+    std::array<T, 4> arr = {abs(diff.get_a()), abs(diff.get_b()), abs(diff.get_c()), abs(diff.get_d())};
+    return *std::max_element(arr.begin(), arr.end());
+}
+
 template<typename T>
 quaternion<T> convert_quaternion(Eigen::Matrix<T, 4, 1> v){
     quaternion<T> ret(v(0), v(1), v(2), v(3));

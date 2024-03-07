@@ -96,7 +96,31 @@ struct ZOmega
         return (a == other.a && b == other.b) && (c == other.c && d == other.d);
     }
 
+    inline ZOmega<T> operator+(const ZOmega<T> &other) const
+    {
+        return {a+other.a, b+other.b, c+other.c, d+other.d};
+    }
+
+    inline ZOmega<T> operator*(const ZOmega<T> &other) const
+    {
+        return {a*other.d + b*other.c + c*other.b + d*other.a, 
+               -a*other.a + b*other.d + c*other.c + d*other.b,
+               -a*other.b - b*other.a + c*other.d + d*other.c,
+               -a*other.c - b*other.b - c*other.a + d*other.d};
+    }
+
+    ZOmega<T> conj(){
+        return {-c, -b, -a, d};
+    }
+
 };
+
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const ZOmega<T>& x){
+    os << "(" << x.a << ", " << x.b << ", " << x.c << ", " << x.d << ")";
+    return os;
+}
 
 
 template<typename T>

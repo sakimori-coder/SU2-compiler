@@ -58,7 +58,7 @@ void test_get_optimal_prob(){
 
 
 void test_optimal_prob_unitary(){
-    int T_count = 10;
+    int T_count = 40;
     cout << "Tゲート数 : " << T_count << endl;
     quaternion<FTYPE> targetU = random_unitary<FTYPE>(1234);
     optimal_prob_unitary(T_count, targetU);
