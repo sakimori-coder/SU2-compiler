@@ -15,8 +15,7 @@ int main(){
 
 
 
-    Eigen::Matrix<FTYPE, 2, 1> v;
-    v << 1.0, 1.0;
-    cout << setprecision(50) << v.norm() << endl;
-    
+    FTYPE sqrt2_inv = 1.0 / sqrt((FTYPE)2.0);
+    cout << setprecision(50) << sqrt2_inv << endl;
+    cout << setprecision(50) << 1.0 / sqrt2 << endl;
 }

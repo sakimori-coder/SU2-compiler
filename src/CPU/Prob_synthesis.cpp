@@ -29,7 +29,7 @@ Eigen::Matrix<T, 4, 4> CJ_MB(Eigen::Matrix<std::complex<T>, 2, 2> U){
     Eigen::Matrix<std::complex<T>, 4, 4> CJ_U = Choi_Jamiolkowski<std::complex<T>, 2>(U);
 
     std::complex<T> i(0., 1.);
-    T sqrt2_inv = 1 / sqrt((T)2.0);
+    T sqrt2_inv = 1.0 / sqrt((T)2.0);
     std::complex<T> isqrt2_inv(0, sqrt2_inv);
     Eigen::Matrix<std::complex<T>, 4, 4> M = Eigen::Matrix<std::complex<T>, 4, 4>::Zero(4,4);
     M(0,0) = sqrt2_inv;
@@ -174,7 +174,6 @@ void optimal_prob_unitary(int T_count, quaternion<T> targetU){
         std::vector<quaternion<T>> availableU = enumerate_u_t<long long, T>(targetU, 2.0*eps, T_count / 2);
         std::cout << "eps " << eps << std::endl;
         std::cout << "利用可能なユニタリの数" << availableU.size() << std::endl;
-        eps += eps / 10;
 
         if(check_eps_net(availableU, targetU, eps)){
             T min_eps = 1.0;
@@ -184,5 +183,6 @@ void optimal_prob_unitary(int T_count, quaternion<T> targetU){
             std::cout << std::setprecision(20) << diamond_distance(targetU, availableU, prob) << std::endl;
             break;
         }
+        eps += eps / 10;
     }
 }

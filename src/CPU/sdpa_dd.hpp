@@ -61,6 +61,7 @@ void input_sdpa_data(std::vector<T>& C, vector_4d<T>& F, std::ofstream& ofs){
 // string to float
 template <typename T>
 T stof(std::string s){
+    std::cout << "aaa" << std::endl;
     T ret(s);
     return ret;
 }
