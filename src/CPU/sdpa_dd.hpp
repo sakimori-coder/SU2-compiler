@@ -104,7 +104,7 @@ std::vector<T> sdpa_solver(std::vector<T>& C, vector_4d<T>& F){
     }
 
     input_sdpa_data(C, F, ofs);
-    std::string command_sdpa = "sdpa_dd " + filename1 + " " + filename2 + " -pt 2 > " + filename3;
+    std::string command_sdpa = "sdpa_qd " + filename1 + " " + filename2 + " > " + filename3;
     if(system(command_sdpa.c_str()) == -1){
         std::cout << "SDPコマンドが正常に動作しませんでした" << std::endl;
     }
@@ -117,9 +117,9 @@ std::vector<T> sdpa_solver(std::vector<T>& C, vector_4d<T>& F){
     std::vector<T> xVec = output_sdpa_data<T>(ifs);
 
     std::string command_rm = "rm " + filename1 + " " + filename2 + " " + filename3;
-    // if(system(command_rm.c_str()) == -1){
-    //     std::cout << filename1 << "と" << filename2 << "と" << filename3 << "が削除されていません" << std::endl;
-    // }
+    if(system(command_rm.c_str()) == -1){
+        std::cout << filename1 << "と" << filename2 << "と" << filename3 << "が削除されていません" << std::endl;
+    }
     
     return xVec;
 }

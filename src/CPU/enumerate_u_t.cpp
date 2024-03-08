@@ -49,6 +49,7 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
     std::vector<ZRoot2<ITYPE>> W_omega = one_dim_grid_problem<ITYPE, FTYPE>((d - eps)*sqrt2k - inv_sqrt2, (d + eps)*sqrt2k - inv_sqrt2, y0, y1);
     // eps /= sqrt2;
 
+
     // ωの1/√2を消すため, 2(x^2 + y^2 + z^2 + w^2) = 2*2^kを満たすx,y,z,wを求める.
     // 候補点を√2倍したもの 
     std::vector<ZRoot2<ITYPE>> sqrt2_X(X.size());
@@ -76,7 +77,7 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
     ZRoot2<ITYPE> pow_2_k_1 = (ITYPE)1<<(k+1); 
     std::vector<Pair_ZOmega<ITYPE>> solutions_total;   // 全パターンの解の結果 (Z[ω]のpairのvectorであることに注意)
 
-    // u = (a+b√2)+i(c+c√2)をZ[ω]の係数に変換する関数. convert2は√2倍されているものを変換する. 
+    // u = (a+b√2)+i(c+d√2)をZ[ω]の係数に変換する関数. convert2は√2倍されているものを変換する. 
     auto convert1 = [](ZRoot2<ITYPE> re, ZRoot2<ITYPE> im) -> ZOmega<ITYPE>{ return {-re.b+im.b, im.a, re.b+im.b, re.a}; }; 
     auto convert2 = [](ZRoot2<ITYPE> re, ZRoot2<ITYPE> im) -> ZOmega<ITYPE>{ return {(-re.a+im.a) / 2, im.b, (re.a+im.a) / 2, re.b}; };
 
@@ -111,8 +112,7 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
 
     std::vector<quaternion<FTYPE>> ret;
     for(auto [x,y] : solutions_total){
-        std::cout << x << std::endl;
-        std::cout << y << std::endl;
+        // std::cout << x << " " << y << std::endl;
         quaternion<FTYPE> V = to_quaterion<ITYPE, FTYPE>(x, y);
         V = V / V.norm();
 

@@ -64,6 +64,34 @@ void test_optimal_prob_unitary(int T_count){
     
 }
 
+void test_optimal_prob_unitary2(){
+    FTYPE eps = 5.29731e-09;
+    quaternion<FTYPE> targetU = random_unitary<FTYPE>(1234);
+    vector<quaternion<FTYPE>> availableU;
+    ifstream ifs("availableU.txt");
+    string line;
+    string conma;
+    while(getline(ifs, line)){
+        istringstream i_stream(line);
+        getline(i_stream, conma, ',');
+        FTYPE a(conma);
+        getline(i_stream, conma, ',');
+        FTYPE b(conma);
+        getline(i_stream, conma, ',');
+        FTYPE c(conma);
+        getline(i_stream, conma, ',');
+        FTYPE d(conma);
+        quaternion<FTYPE> U = {a,b,c,d};
+        availableU.push_back(U);
+    }
+
+    if(check_eps_net(availableU, targetU, eps)){
+        vector<FTYPE> prob = get_optimal_prob(availableU, targetU);
+        // cout << setprecision(30) << diamond_distance(targetU, availableU, prob) << endl;
+    }
+    
+}
+
 int main(int argc, char *argv[]){
     // test_choi_matrix();
     // test_get_optimal_prob();
@@ -71,5 +99,7 @@ int main(int argc, char *argv[]){
     int T_count = 30;
     if(argc == 2) T_count = stoi(string(argv[1]));
     test_optimal_prob_unitary(T_count);
+
+    // test_optimal_prob_unitary2();
     
 }

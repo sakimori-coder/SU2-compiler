@@ -178,7 +178,7 @@ void optimal_prob_unitary(int T_count, quaternion<T> targetU){
         // exit(0);
 
         if(check_eps_net(availableU, targetU, eps)){
-            std::ofstream ofs("availbleU.txt");
+            std::ofstream ofs("availableU.txt");
             for(auto U : availableU){
                 ofs << std::setprecision(30) << U.get_a() << ", " << U.get_b() << ", " << U.get_c() << ", " << U.get_d() << std::endl;
             }

@@ -64,9 +64,10 @@ std::ostream& operator<<(std::ostream& os, const ZRoot2<T>& x){
 }
 
 
-template<typename T>
-double convert(ZRoot2<T> x){
-    return x.a + sqrt(2.0)*x.b;
+template<typename ITYPE, typename FTYPE>
+FTYPE convert(ZRoot2<ITYPE> x){
+    FTYPE sqrt2 = sqrt((FTYPE)2.0);
+    return (FTYPE)x.a + sqrt2*(FTYPE)x.b;
 }
 
 
