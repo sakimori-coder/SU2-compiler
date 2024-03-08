@@ -172,19 +172,26 @@ void optimal_prob_unitary(int T_count, quaternion<T> targetU){
 
     while(true){
         std::vector<quaternion<T>> availableU = enumerate_u_t<long long, T>(targetU, 2.0*eps, T_count / 2);
-        // std::cout << "eps " << eps << std::endl;
+        std::cout << "eps " << eps << std::endl;
         std::cout << "利用可能なユニタリの数" << availableU.size() << std::endl;
         // for(auto x : availableU) std::cout << std::setprecision(30) << x << std::endl;
         // exit(0);
 
         if(check_eps_net(availableU, targetU, eps)){
+            std::ofstream ofs("availbleU.txt");
+            for(auto U : availableU){
+                ofs << std::setprecision(30) << U.get_a() << ", " << U.get_b() << ", " << U.get_c() << ", " << U.get_d() << std::endl;
+            }
+
             T min_eps = 1.0;
             for(auto u : availableU) min_eps = std::min(min_eps, distance(targetU, u));
             std::vector<T> prob = get_optimal_prob<T>(availableU, targetU);
+            for(auto p : prob) std::cout << p << " ";
+            std::cout << std::endl;
             std::cout << "下限 " << min_eps*min_eps << std::endl;
             std::cout << std::setprecision(20) << diamond_distance(targetU, availableU, prob) << std::endl;
             break;
         }
-        eps += eps / 10;
+        eps += eps / 5;
     }
 }

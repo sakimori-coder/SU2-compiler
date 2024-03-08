@@ -13,6 +13,11 @@ using Pair_ZRoot2 = std::pair<ZRoot2<T>, ZRoot2<T>>;
 template<typename T>
 using Pair_ZOmega = std::pair<ZOmega<T>, ZOmega<T>>;
 
+template <typename T>
+T min(T a, T b){
+    if(a < b) return a;
+    else return b;
+}
 
 
 template<typename ITYPE, typename FTYPE>
@@ -106,6 +111,8 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
 
     std::vector<quaternion<FTYPE>> ret;
     for(auto [x,y] : solutions_total){
+        std::cout << x << std::endl;
+        std::cout << y << std::endl;
         quaternion<FTYPE> V = to_quaterion<ITYPE, FTYPE>(x, y);
         V = V / V.norm();
 

@@ -57,18 +57,19 @@ void test_get_optimal_prob(){
 }
 
 
-void test_optimal_prob_unitary(){
-    int T_count = 40;
+void test_optimal_prob_unitary(int T_count){
     cout << "Tゲート数 : " << T_count << endl;
     quaternion<FTYPE> targetU = random_unitary<FTYPE>(1234);
     optimal_prob_unitary(T_count, targetU);
     
 }
 
-int main(){
+int main(int argc, char *argv[]){
     // test_choi_matrix();
     // test_get_optimal_prob();
-    test_optimal_prob_unitary();
-
+    
+    int T_count = 30;
+    if(argc == 2) T_count = stoi(string(argv[1]));
+    test_optimal_prob_unitary(T_count);
     
 }
