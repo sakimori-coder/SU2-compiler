@@ -49,6 +49,8 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
     std::vector<ZRoot2<ITYPE>> W_omega = one_dim_grid_problem<ITYPE, FTYPE>((d - eps)*sqrt2k - inv_sqrt2, (d + eps)*sqrt2k - inv_sqrt2, y0, y1);
     // eps /= sqrt2;
 
+    std::cout << X.size() << " " << Y.size() << " " << Z.size() << " " << W.size() << std::endl; 
+
 
     // ωの1/√2を消すため, 2(x^2 + y^2 + z^2 + w^2) = 2*2^kを満たすx,y,z,wを求める.
     // 候補点を√2倍したもの 

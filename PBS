@@ -10,7 +10,10 @@ In file included from /home/morisaki/.local/gcc/include/c++/11.3.0/pstl/parallel
 /opt/intel/compilers_and_libraries_2020.4.304/linux/tbb/include/tbb/task.h:21:139: note: ‘#pragma message: TBB Warning: tbb/task.h is deprecated. For details, please see Deprecated Features appendix in the TBB reference manual.’
    21 | #pragma message("TBB Warning: tbb/task.h is deprecated. For details, please see Deprecated Features appendix in the TBB reference manual.")
       |                                                                                                                                           ^
+terminate called after throwing an instance of 'std::bad_alloc'
+  what():  std::bad_alloc
+/var/spool/pbs/mom_priv/jobs/553034.CPUcluster-PRISM.SC: line 15: 391112 Aborted                 (core dumped) ./a.out $T_count > $log_name
 
-real	100m26.298s
-user	7163m12.517s
-sys	714m0.095s
+real	533m32.498s
+user	33245m23.322s
+sys	4860m8.337s

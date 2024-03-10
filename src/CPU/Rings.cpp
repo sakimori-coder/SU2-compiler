@@ -26,14 +26,22 @@ struct ZRoot2
 
     inline bool operator<(const ZRoot2<T> &other) const
     { 
-        // if(a == other.a) return (b < other.b);
-        // return (a < other.a);
-        return a < other.a || (!(other.a < a) && b < other.b);
+        return a < other.a || ((a == other.a) && b < other.b);
+    }
+
+    inline bool operator>(const ZRoot2<T> &other) const
+    {
+        return a > other.a || ((a == other.a) && b > other.b);
     }
 
     inline bool operator==(const ZRoot2<T> &other) const
     {
         return a == other.a && b == other.b;
+    }
+
+    inline bool operator!=(const ZRoot2<T> &other) const
+    {
+        return a != other.a || b != other.b;
     }
 
     inline ZRoot2<T> operator+(const ZRoot2<T> &other) const
