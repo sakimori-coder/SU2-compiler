@@ -162,7 +162,11 @@ void Generate_Clifford(){
 
 
 template <typename T>
-std::string Exact_synthesis(Eigen::Matrix<ZOmega<T>, 2, 2> U, int k){
+std::string Exact_synthesis(ZOmega<T> u, ZOmega<T> t, int k){
+    Eigen::Matrix<ZOmega<T>, 2, 2> U;
+    U << u, -t.conj(), 
+         t,  u.conj();
+    
     Generate_Clifford();
     
     auto [U_SO3, k_SO3] = to_SO3(U, k);
