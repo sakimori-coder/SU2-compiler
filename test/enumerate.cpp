@@ -11,4 +11,6 @@ int main(){
     quaternion<FTYPE> targetU = random_unitary<FTYPE>(1234);
 
     vector<quaternion<FTYPE>> availableU = enumerate_u_t<long long, FTYPE>(targetU, eps, 20);
+
+    cout << availableU.size() << endl;
 }

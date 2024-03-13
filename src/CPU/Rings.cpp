@@ -63,6 +63,11 @@ struct ZRoot2
     {
         return {a*other.a + 2*b*other.b, a*other.b + b*other.a};
     }
+
+    inline ZRoot2<T> operator*(const T &other) const
+    {
+        return {a*other, b*other};
+    }
 };
 
 template<typename T>

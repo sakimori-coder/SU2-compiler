@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bits/stdc++.h>
+#include <execution>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include "Rings.cpp"
 #include "grid_solve.cpp"
@@ -17,6 +18,40 @@ template <typename T>
 T min(T a, T b){
     if(a < b) return a;
     else return b;
+}
+
+
+template <typename T>
+std::vector<std::array<T, 4>> subroutine(
+    std::vector<T>& X, std::vector<T>& Y, std::vector<T>& Z, std::vector<T>& W,
+    std::vector<T>& X_squared, std::vector<T>& Y_squared, std::vector<T>& Z_squared, std::vector<T>& W_squared,
+    std::vector<T>& XY, std::vector<T>& ZW, T key)
+{
+    std::vector<std::array<T, 4>> ret;
+    auto solutions = two_points_technique(XY.begin(), XY.end(), ZW.begin(), ZW.end(), key);
+
+    for(auto [xy_squared, zw_squared] : solutions){
+        std::set<std::pair<T, T>> xy_ans, zw_ans;
+        auto xy_solutions = two_points_technique(X_squared.begin(), X_squared.end(), Y_squared.begin(), Y_squared.end(), xy_squared);
+        for(auto [x_square, y_square] : xy_solutions){
+            std::vector<T> x_ans, y_ans;
+            for(auto x : X) if(x*x == x_square) x_ans.push_back(x);
+            for(auto y : Y) if(y*y == y_square) y_ans.push_back(y);
+            for(auto x : x_ans) for(auto y : y_ans) xy_ans.insert({x,y});
+        }
+
+        auto zw_solutions = two_points_technique(Z_squared.begin(), Z_squared.end(), W_squared.begin(), W_squared.end(), zw_squared);
+        for(auto [z_square, w_square]: zw_solutions){
+            std::vector<T> z_ans, w_ans;
+            for(auto z : Z) if(z*z == z_square) z_ans.push_back(z);
+            for(auto w : W) if(w*w == w_square) w_ans.push_back(w);
+            for(auto z : z_ans) for(auto w : w_ans) zw_ans.insert({z,w});
+        }
+
+        for(auto [x,y] : xy_ans) for(auto [z,w] : zw_ans) ret.push_back({x,y,z,w});
+    }
+
+    return ret;
 }
 
 
@@ -49,31 +84,81 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
     std::vector<ZRoot2<ITYPE>> W_omega = one_dim_grid_problem<ITYPE, FTYPE>((d - eps)*sqrt2k - inv_sqrt2, (d + eps)*sqrt2k - inv_sqrt2, y0, y1);
     // eps /= sqrt2;
 
-    std::cout << X.size() << " " << Y.size() << " " << Z.size() << " " << W.size() << std::endl; 
+    const long unsigned int X_size = X.size();
+    const long unsigned int Y_size = Y.size();
+    const long unsigned int Z_size = Z.size();
+    const long unsigned int W_size = W.size();
+
+    const long unsigned int X_omega_size = X_omega.size();
+    const long unsigned int Y_omega_size = Y_omega.size();
+    const long unsigned int Z_omega_size = Z_omega.size();
+    const long unsigned int W_omega_size = W_omega.size();
+
+    // std::cout << X_size << " " << Y_size << " " << Z_size << " " << W_size << std::endl; 
+    // std::cout << X_omega_size << " " << Y_omega_size << " " << Z_omega_size << " " << W_omega_size << std::endl; 
+
+    std::vector<ZRoot2<ITYPE>> X_squared(X_size);
+    std::vector<ZRoot2<ITYPE>> Y_squared(Y_size);
+    std::vector<ZRoot2<ITYPE>> Z_squared(Z_size);
+    std::vector<ZRoot2<ITYPE>> W_squared(W_size);
+    for(int i = 0; i < X_size; i++) X_squared[i] = X[i] * X[i];
+    for(int i = 0; i < Y_size; i++) Y_squared[i] = Y[i] * Y[i];
+    for(int i = 0; i < Z_size; i++) Z_squared[i] = Z[i] * Z[i];
+    for(int i = 0; i < W_size; i++) W_squared[i] = W[i] * W[i];
+    std::sort(std::execution::par, X_squared.begin(), X_squared.end());
+    std::sort(std::execution::par, Y_squared.begin(), Y_squared.end());
+    std::sort(std::execution::par, Z_squared.begin(), Z_squared.end());
+    std::sort(std::execution::par, W_squared.begin(), W_squared.end());
 
 
-    // ωの1/√2を消すため, 2(x^2 + y^2 + z^2 + w^2) = 2*2^kを満たすx,y,z,wを求める.
-    // 候補点を√2倍したもの 
-    std::vector<ZRoot2<ITYPE>> sqrt2_X(X.size());
-    std::vector<ZRoot2<ITYPE>> sqrt2_Y(Y.size());
-    std::vector<ZRoot2<ITYPE>> sqrt2_Z(Z.size());
-    std::vector<ZRoot2<ITYPE>> sqrt2_W(W.size());
-    std::vector<ZRoot2<ITYPE>> sqrt2_X_omega(X_omega.size());
-    std::vector<ZRoot2<ITYPE>> sqrt2_Y_omega(Y_omega.size());
-    std::vector<ZRoot2<ITYPE>> sqrt2_Z_omega(Z_omega.size());
-    std::vector<ZRoot2<ITYPE>> sqrt2_W_omega(W_omega.size());
+    std::vector<ZRoot2<ITYPE>> X_omega_squared(X_omega_size);
+    std::vector<ZRoot2<ITYPE>> Y_omega_squared(Y_omega_size);
+    std::vector<ZRoot2<ITYPE>> Z_omega_squared(Z_omega_size);
+    std::vector<ZRoot2<ITYPE>> W_omega_squared(W_omega_size);
+    // √2倍していないものは使わないので、先に√2倍しておく
+    for(auto &x_omega : X_omega) x_omega = {(ITYPE)2*x_omega.b + 1, x_omega.a};
+    for(auto &y_omega : Y_omega) y_omega = {(ITYPE)2*y_omega.b + 1, y_omega.a};
+    for(auto &z_omega : Z_omega) z_omega = {(ITYPE)2*z_omega.b + 1, z_omega.a};
+    for(auto &w_omega : W_omega) w_omega = {(ITYPE)2*w_omega.b + 1, w_omega.a};
+    for(int i = 0; i < X_omega_size; i++) X_omega_squared[i] = X_omega[i] * X_omega[i];
+    for(int i = 0; i < Y_omega_size; i++) Y_omega_squared[i] = Y_omega[i] * Y_omega[i];
+    for(int i = 0; i < Z_omega_size; i++) Z_omega_squared[i] = Z_omega[i] * Z_omega[i];
+    for(int i = 0; i < W_omega_size; i++) W_omega_squared[i] = W_omega[i] * W_omega[i];
+    std::sort(std::execution::par, X_omega_squared.begin(), X_omega_squared.end());
+    std::sort(std::execution::par, Y_omega_squared.begin(), Y_omega_squared.end());
+    std::sort(std::execution::par, Z_omega_squared.begin(), Z_omega_squared.end());
+    std::sort(std::execution::par, W_omega_squared.begin(), W_omega_squared.end());
 
-    // √2*(a + b√2) = 2b + a√2
-    for(int i = 0; i < X.size(); i++) sqrt2_X[i] = {2*X[i].b, X[i].a};
-    for(int i = 0; i < Y.size(); i++) sqrt2_Y[i] = {2*Y[i].b, Y[i].a};
-    for(int i = 0; i < Z.size(); i++) sqrt2_Z[i] = {2*Z[i].b, Z[i].a};
-    for(int i = 0; i < W.size(); i++) sqrt2_W[i] = {2*W[i].b, W[i].a};
-    // √2*(a + b√2 + 1/√2) = (2b + 1) + a√2
-    for(int i = 0; i < X_omega.size(); i++) sqrt2_X_omega[i] = {2*X_omega[i].b + 1, X_omega[i].a};
-    for(int i = 0; i < Y_omega.size(); i++) sqrt2_Y_omega[i] = {2*Y_omega[i].b + 1, Y_omega[i].a};
-    for(int i = 0; i < Z_omega.size(); i++) sqrt2_Z_omega[i] = {2*Z_omega[i].b + 1, Z_omega[i].a};
-    for(int i = 0; i < W_omega.size(); i++) sqrt2_W_omega[i] = {2*W_omega[i].b + 1, W_omega[i].a};
 
+    std::vector<ZRoot2<ITYPE>> XY(X_size * Y_size);
+    std::vector<ZRoot2<ITYPE>> ZW(Z_size * W_size);
+    std::vector<ZRoot2<ITYPE>> XY_omega(X_omega_size * Y_omega_size);
+    std::vector<ZRoot2<ITYPE>> ZW_omega(Z_omega_size * W_omega_size);
+
+    for(long long i = 0; i < X_size; i++){
+        for(long long j = 0; j < Y_size; j++) XY[i*Y_size + j] = X_squared[i] + Y_squared[j];
+    }
+    for(long long i = 0; i < Z_size; i++){
+        for(long long j = 0; j < W_size; j++) ZW[i*W_size + j] = Z_squared[i] + W_squared[j];
+    }
+    for(long long i = 0; i < X_omega_size; i++){
+        for(long long j = 0; j < Y_omega_size; j++) XY_omega[i*Y_omega_size + j] = X_omega_squared[i] + Y_omega_squared[j];
+    }
+    for(long long i = 0; i < Z_omega_size; i++){
+        for(long long j = 0; j < W_omega_size; j++) ZW_omega[i*W_omega_size + j] = Z_omega_squared[i] + W_omega_squared[j];
+    }
+
+#pragma omp parallel sections
+    {
+#pragma omp section
+    std::sort(std::execution::par, XY.begin(), XY.end());
+#pragma omp section
+    std::sort(std::execution::par, ZW.begin(), ZW.end());
+#pragma omp section
+    std::sort(std::execution::par, XY_omega.begin(), XY_omega.end());
+#pragma omp section
+    std::sort(std::execution::par, ZW_omega.begin(), ZW_omega.end());
+    }
 
     ZRoot2<ITYPE> pow_2_k = (ITYPE)1<<k; 
     ZRoot2<ITYPE> pow_2_k_1 = (ITYPE)1<<(k+1); 
@@ -84,33 +169,34 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
     auto convert2 = [](ZRoot2<ITYPE> re, ZRoot2<ITYPE> im) -> ZOmega<ITYPE>{ return {(-re.a+im.a) / 2, im.b, (re.a+im.a) / 2, re.b}; };
 
 
-    // u = x+iy, t = z+iwと書ける場合(パターン1)
-    auto solutions1 = search_four_square_using_vector(X.begin(), X.end(),
-                                         Y.begin(), Y.end(),
-                                         Z.begin(), Z.end(),
-                                         W.begin(), W.end(), pow_2_k);
-    for(auto [x, y, z, w] : solutions1) solutions_total.push_back({convert1(*x, *y), convert1(*z, *w)});
+    auto solutions1 = subroutine(X, Y, Z, W, X_squared, Y_squared, Z_squared, W_squared, XY, ZW, pow_2_k);
+    for(auto [x, y, z, w]: solutions1) solutions_total.push_back({convert1(x,y), convert1(z,w)});
 
-    // u = x+iy, t = z+iw+ωと書ける場合(パターン2)
-    auto solutions2 = search_four_square_using_vector(sqrt2_X.begin(), sqrt2_X.end(),
-                                         sqrt2_Y.begin(), sqrt2_Y.end(),
-                                         sqrt2_Z_omega.begin(), sqrt2_Z_omega.end(),
-                                         sqrt2_W_omega.begin(), sqrt2_W_omega.end(), pow_2_k_1);
-    for(auto [x, y, z, w] : solutions2) solutions_total.push_back({convert2(*x, *y), convert2(*z, *w)});
+    ZRoot2<ITYPE> sqrt2_ZRoot2 = {0,1};
+    for(auto &x : X) x = sqrt2_ZRoot2 * x; 
+    for(auto &y : Y) y = sqrt2_ZRoot2 * y;
+    for(auto &z : Z) z = sqrt2_ZRoot2 * z;
+    for(auto &w : W) w = sqrt2_ZRoot2 * w;
+    for(auto &x_sq : X_squared) x_sq = x_sq * 2;
+    for(auto &y_sq : Y_squared) y_sq = y_sq * 2;
+    for(auto &z_sq : Z_squared) z_sq = z_sq * 2;
+    for(auto &w_sq : W_squared) w_sq = w_sq * 2;
+    for(auto &xy : XY) xy = xy * 2;
+    for(auto &zw : ZW) zw = zw * 2;
 
-    // u = x+iy+ω, t = z+iwと書ける場合(パターン3)
-    auto solutions3 = search_four_square_using_vector(sqrt2_X_omega.begin(), sqrt2_X_omega.end(),
-                                         sqrt2_Y_omega.begin(), sqrt2_Y_omega.end(),
-                                         sqrt2_Z.begin(), sqrt2_Z.end(),
-                                         sqrt2_W.begin(), sqrt2_W.end(), pow_2_k_1);
-    for(auto [x, y, z, w] : solutions3) solutions_total.push_back({convert2(*x, *y), convert2(*z, *w)});
+    auto solutions2 = subroutine(X, Y, Z_omega, W_omega,
+                                 X_squared, Y_squared, Z_omega_squared, W_omega_squared, XY, ZW_omega, pow_2_k_1);
+    for(auto [x, y, z, w]: solutions2) solutions_total.push_back({convert2(x,y), convert2(z,w)});
 
-    // u = x+iy+ω, t = z+iw+ωと書ける場合(パターン4)
-    auto solutions4 = search_four_square_using_vector(sqrt2_X_omega.begin(), sqrt2_X_omega.end(),
-                                         sqrt2_Y_omega.begin(), sqrt2_Y_omega.end(),
-                                         sqrt2_Z_omega.begin(), sqrt2_Z_omega.end(),
-                                         sqrt2_W_omega.begin(), sqrt2_W_omega.end(), pow_2_k_1);
-    for(auto [x, y, z, w] : solutions4) solutions_total.push_back({convert2(*x, *y), convert2(*z, *w)});
+    auto solutions3 = subroutine(X_omega, Y_omega, Z, W, 
+                                 X_omega_squared, Y_omega_squared, Z_squared, W_squared, 
+                                 XY_omega, ZW, pow_2_k_1);
+    for(auto [x, y, z, w]: solutions3) solutions_total.push_back({convert2(x,y), convert2(z,w)});
+
+    auto solutions4 = subroutine(X_omega, Y_omega, Z_omega, W_omega,
+                                 X_omega_squared, Y_omega_squared, Z_omega_squared, W_omega_squared,
+                                XY_omega, ZW_omega, pow_2_k_1);
+    for(auto [x, y, z, w]: solutions4) solutions_total.push_back({convert2(x,y), convert2(z,w)});
 
     std::vector<quaternion<FTYPE>> ret;
     for(auto [x,y] : solutions_total){
@@ -122,6 +208,7 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
         FTYPE d2 = min(distance_max(U,V), distance_max(U,-V));
         if(d1 < d2/sqrt2) std::cout << "間違ってる" << std::endl;
 
+        // std::cout << d1 << std::endl;
 
         if(distance(U, V) <= eps){
             quaternion<FTYPE> cand1 = U - V;

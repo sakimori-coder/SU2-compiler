@@ -15,7 +15,7 @@ x^2 + y^2 = keyとなる要素を探索する.
 template<class RandomAccessIterator, typename T>
 Pair_Iterator<RandomAccessIterator> search_two_square(
                             RandomAccessIterator first_X, RandomAccessIterator last_X,
-                            RandomAccessIterator first_Y, RandomAccessIterator last_Y, 
+                            RandomAccessIterator first_Y, RandomAccessIterator last_Y,
                             const T& key)
 {
     for(auto it1 = first_X; it1 != last_X; it1++){
@@ -34,12 +34,12 @@ Pair_Iterator<RandomAccessIterator> search_two_square(
 ソート済み配列A,Bからa_i + b_j = keyとなるi,jを探索する.
 */
 template<class RandomAccessIterator, typename T>
-std::vector<Pair_Iterator<RandomAccessIterator>> two_points_technique(
+std::vector<std::pair<T, T>> two_points_technique(
                             RandomAccessIterator first1, RandomAccessIterator last1,
                             RandomAccessIterator first2, RandomAccessIterator last2,
                             const T& key)
 {
-    std::vector<Pair_Iterator<RandomAccessIterator>> ret;
+    std::vector<std::pair<T, T>> ret;
     static const T zero = 0;
     auto left = first1;
     auto right = last2 - 1;
@@ -47,7 +47,7 @@ std::vector<Pair_Iterator<RandomAccessIterator>> two_points_technique(
         while(right != first2-1){
             T diff = key - *left - *right;
             if(diff == zero){
-                ret.push_back({left, right});
+                ret.push_back({*left, *right});
             }
             if(diff < zero) right--;
             else break;
