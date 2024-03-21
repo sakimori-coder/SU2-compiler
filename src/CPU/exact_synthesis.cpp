@@ -1,3 +1,5 @@
+#pragma once
+
 #include <bits/stdc++.h>
 #include <Eigen/Core>
 #include "Rings.cpp"
@@ -162,11 +164,17 @@ void Generate_Clifford(){
 
 
 template <typename T>
-std::string Exact_synthesis(ZOmega<T> u, ZOmega<T> t, int k){
+std::string Exact_synthesis(ZOmega<T> u, ZOmega<T> t, int k, int omega_flag=false){
+    ZOmega<T> omega = {0,0,1,0};
     Eigen::Matrix<ZOmega<T>, 2, 2> U;
-    U << u, -t.conj(), 
-         t,  u.conj();
-    
+    if(!omega_flag){
+        U << u, -t.conj(), 
+             t,  u.conj();
+    }else{
+        U << u, -t.conj() * omega,
+             t,  u.conj() * omega;
+    }
+
     Generate_Clifford();
     
     auto [U_SO3, k_SO3] = to_SO3(U, k);
@@ -217,4 +225,50 @@ std::string Exact_synthesis(ZOmega<T> u, ZOmega<T> t, int k){
     }
 
     return ret;
+}
+
+
+template <typename T>
+int get_T_count(ZOmega<T> u, ZOmega<T> t, int k, int omega_flag=false){
+    ZOmega<T> omega = {0,0,1,0};
+    Eigen::Matrix<ZOmega<T>, 2, 2> U;
+    if(!omega_flag){
+        U << u, -t.conj(), 
+             t,  u.conj();
+    }else{
+        U << u, -t.conj() * omega,
+             t,  u.conj() * omega;
+    }
+    
+    auto [U_SO3, k_SO3] = to_SO3(U, k);
+    
+    return k_SO3;
+}
+
+
+template <typename FTYPE>
+quaternion<FTYPE> to_quaternion(std::string seq){
+    std::complex omega(1/sqrt((FTYPE)2.0), 1/sqrt((FTYPE)2.0));
+    Eigen::Matrix<std::complex<FTYPE>, 2, 2> H, S, T;
+    H(0,0) = H(0,1) = H(1,0) = 1/sqrt((FTYPE)2.0);
+    H(1,1) = -1/sqrt((FTYPE)2.0);
+    S(0,0) = 1;
+    S(1,1) = omega * omega;
+    T(0,0) = 1;
+    T(1,1) = omega;
+
+    Eigen::Matrix<std::complex<FTYPE>, 2, 2> U;
+    U(0,0) = U(1,1) = 1.0;
+    for(auto c : seq){
+        if(c == 'H') U = U * H;
+        if(c == 'S') U = U * S;
+        if(c == 'T') U = U * T;
+    }
+
+    std::complex<FTYPE> det = U(0,0) * U(1,1) - U(1,0) * U(0,1);
+    U = U / sqrt(det);
+
+    quaternion<FTYPE> U_ret(U(0,0).real(), U(0,0).imag(), U(1,0).real(), U(1,0).imag());
+
+    return U_ret;
 }

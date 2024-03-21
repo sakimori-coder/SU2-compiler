@@ -117,9 +117,9 @@ std::vector<T> sdpa_solver(std::vector<T>& C, vector_4d<T>& F){
     std::vector<T> xVec = output_sdpa_data<T>(ifs);
 
     std::string command_rm = "rm " + filename1 + " " + filename2 + " " + filename3;
-    if(system(command_rm.c_str()) == -1){
-        std::cout << filename1 << "と" << filename2 << "と" << filename3 << "が削除されていません" << std::endl;
-    }
+    // if(system(command_rm.c_str()) == -1){
+    //     std::cout << filename1 << "と" << filename2 << "と" << filename3 << "が削除されていません" << std::endl;
+    // }
     
     return xVec;
 }

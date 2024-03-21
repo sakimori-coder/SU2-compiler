@@ -23,6 +23,7 @@ private:
     T d;
     
 public:
+    quaternion() : a(0), b(0), c(0), d(0) {}
     quaternion(T a, T b, T c, T d) : a(a), b(b), c(c), d(d) {}
 
     inline T get_a() const {return a;}

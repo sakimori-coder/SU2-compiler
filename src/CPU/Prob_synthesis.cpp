@@ -1,9 +1,13 @@
 #include <bits/stdc++.h>
 #include <Eigen/Core>
+#include <boost/math/constants/constants.hpp>
 #include "quaternion.hpp"
 #include "sdpa_dd.hpp"
 #include "enumerate_u_t.cpp"
 #include "eps_net_verification.cpp"
+
+
+using Unitary_ZOmega = std::tuple<ZOmega<long long>, ZOmega<long long>, int>;   // u, t, kのタプル
 
 
 // UnitaryのChoi行列
@@ -167,31 +171,112 @@ std::vector<T> get_optimal_prob(std::vector<quaternion<T>> availableU, quaternio
 
 
 template <typename T>
-void optimal_prob_unitary(int T_count, quaternion<T> targetU){
+std::pair<std::vector<std::pair<T, Unitary_ZOmega>>, std::vector<Unitary_ZOmega>>
+optimal_prob_unitary(int T_count, quaternion<T> targetU, std::vector<Unitary_ZOmega> pre_availableU = {})
+{
+    int k = (T_count + 1) / 2 + 1;
+
     T eps = pow(2.0, -(T)T_count / 3.0) / 2.0;   // T_count = 3log_2(1/2eps)をepsについて解いた
+    T delta_eps = eps / 5;
+
+    quaternion<T> omega_sqrt(cos(boost::math::constants::pi<T>() / 8), sin(boost::math::constants::pi<T>() / 8), 0, 0);
+    std::vector<Unitary_ZOmega> new_availableU;
+    std::array<std::vector<ZRoot2<long long>>, 12> pre_resluts = {};
 
     while(true){
-        std::vector<quaternion<T>> availableU = enumerate_u_t<long long, T>(targetU, 2.0*eps, T_count / 2);
+        std::tie(new_availableU, pre_resluts) = enumerate_u_t_wrapper<long long, T>(targetU, 2.0*eps, k, pre_resluts, T_count % 2);
+        
+        std::vector<quaternion<T>> availableU;
+        std::vector<Unitary_ZOmega> availableU_ZOmega;
+        for(auto [u, t, k] : new_availableU){
+            // std::string str = Exact_synthesis(u, t, k, T_count % 2);
+            if(get_T_count(u, t, k, T_count % 2) > T_count) continue; 
+
+            // cout << std::count(str.begin(), str.end(), 'T') << endl;
+            // cout << u << endl;
+            // cout << t << endl;
+            // cout << distance(targetU, to_quaternion<T>(str)) << endl;
+            
+            quaternion<T> U = to_quaterion<long long, T>(u, t);
+            U = U / U.norm();
+            if(T_count % 2) U = omega_sqrt.conj() * U;
+            availableU.push_back(U);
+            availableU_ZOmega.push_back({u, t, k});
+        }
+
+        // T_count-1の結果なので、偶奇が逆になる
+        for(auto [u, t, pre_k] : pre_availableU){
+            if(get_T_count(u, t, k, (T_count-1) % 2) > T_count) continue;   // このif文には入らないと思う
+
+            quaternion<T> U = to_quaterion<long long, T>(u, t);
+            U = U / U.norm();
+            if((T_count-1) % 2) U = omega_sqrt.conj() * U;
+            availableU.push_back(U);
+            availableU_ZOmega.push_back({u, t, pre_k});
+        }
+        
         std::cout << "eps " << eps << std::endl;
         std::cout << "利用可能なユニタリの数" << availableU.size() << std::endl;
+        std::sort(availableU.begin(), availableU.end(), [](quaternion<T> const& lhs, quaternion<T> const& rhs) {return lhs.get_a() < rhs.get_a();});
         // for(auto x : availableU) std::cout << std::setprecision(30) << x << std::endl;
         // exit(0);
 
         if(check_eps_net(availableU, targetU, eps)){
-            std::ofstream ofs("availableU.txt");
-            for(auto U : availableU){
-                ofs << std::setprecision(30) << U.get_a() << ", " << U.get_b() << ", " << U.get_c() << ", " << U.get_d() << std::endl;
-            }
-
             T min_eps = 1.0;
             for(auto u : availableU) min_eps = std::min(min_eps, distance(targetU, u));
             std::vector<T> prob = get_optimal_prob<T>(availableU, targetU);
             for(auto p : prob) std::cout << p << " ";
             std::cout << std::endl;
             std::cout << "下限 " << min_eps*min_eps << std::endl;
-            std::cout << std::setprecision(20) << diamond_distance(targetU, availableU, prob) << std::endl;
-            break;
+            // std::cout << std::setprecision(20) << diamond_distance(targetU, availableU, prob) << std::endl;
+
+            std::vector<std::pair<T, Unitary_ZOmega>> ret;
+            for(int i = 0; i < prob.size(); i++){
+                if(prob[i] > 1e-20) ret.push_back({prob[i], availableU_ZOmega[i]});
+            }
+            return {ret, new_availableU};
         }
-        eps += eps / 5;
+        
+        eps += delta_eps;
+    }
+}
+
+
+template <typename T>
+std::vector<T, std::string> Prob_unitary_synthesis(quaternion<T> targetU, T eps){
+    T eps_sqrt = sqrt(eps);
+    T flag_lower_bound = false;
+
+    int T_count = 0;
+    std::vector<std::pair<T, Unitary_ZOmega> ans;
+    std::vector<Unitary_ZOmega> pre_availableU = {};
+    while(true){
+        // 下限がターゲットユニタリに届いていなかった場合
+        if(!flag_lower_bound){
+            quaternion<T> targetU_prime = targetU;
+            int k = (T_count + 1) / 2 + 1;
+            auto [availableU, garbage] = enumerate_u_t<long long, T>(targetU, eps_sqrt, k, pre_resluts, T_count % 2);
+            if(!availableU.empty()){
+                flag_lower_bound = true;
+                std::tie(ans, pre_availableU) = optimal_prob_unitary(T_count, targetU);
+            } 
+        }
+
+        if(flag_lower_bound){
+            std::tie(ans, pre_availableU) = optimal_prob_unitary(T_count, targetU, pre_availableU);
+
+            for(auto [u, t, k] : ans){
+                if(k == (T_count + 1) / 2 + 1){
+                    quaternion<T> U = to_quaterion<long long, T>(u, t);
+                    U = U / U.norm();
+                    if(T_count % 2) U = omega_sqrt.conj() * U;
+                    
+                }else{
+                    quaternion<T> U = to_quaterion<long long, T>(u, t);
+                    U = U / U.norm();
+                    if((T_count-1) % 2) U = omega_sqrt.conj() * U;              
+                }
+            }
+        }
     }
 }

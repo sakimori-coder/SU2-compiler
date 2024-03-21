@@ -64,10 +64,9 @@ std::vector<std::array<T, 4>> subroutine(
 
 
 template<typename ITYPE, typename FTYPE>
-std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int k, const std::array<std::vector<ZRoot2<ITYPE>>, 12>& pre_results = {})
+std::pair< std::vector<Pair_ZOmega<ITYPE> >, std::array<std::vector< ZRoot2<ITYPE> >, 12> >
+enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int k, const std::array<std::vector<ZRoot2<ITYPE>>, 12>& pre_results = {})
 {
-    
-
     FTYPE a = U.get_a();
     FTYPE b = U.get_b();
     FTYPE c = U.get_c();
@@ -162,60 +161,106 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
     const long unsigned int diff_Z_omega_size = diff_Z_omega_squared.size();
     const long unsigned int diff_W_omega_size = diff_W_omega_squared.size();
 
-    std::vector<ZRoot2<ITYPE>> XY(X_size * Y_size);
-    std::vector<ZRoot2<ITYPE>> ZW(Z_size * W_size);
-    std::vector<ZRoot2<ITYPE>> XY_omega(X_omega_size * Y_omega_size);
-    std::vector<ZRoot2<ITYPE>> ZW_omega(Z_omega_size * W_omega_size);
+    // std::cout << X_size << " " << Y_size << " " << Z_size << " " << W_size << std::endl; 
+    // std::cout << X_omega_size << " " << Y_omega_size << " " << Z_omega_size << " " << W_omega_size << std::endl;
+    // std::cout << diff_X_size << " " << diff_Y_size << " " << diff_Z_size << " " << diff_W_size << std::endl; 
+    // std::cout << diff_X_omega_size << " " << diff_Y_omega_size << " " << diff_Z_omega_size << " " << diff_W_omega_size << std::endl;
+
+    std::vector<ZRoot2<ITYPE>> diff_XY((diff_X_size * pre_results[1].size()) + (pre_results[0].size() * diff_Y_size) + (diff_X_size * diff_Y_size));
+    std::vector<ZRoot2<ITYPE>> diff_ZW((diff_Z_size * pre_results[3].size()) + (pre_results[2].size() * diff_W_size) + (diff_Z_size * diff_W_size));
+    std::vector<ZRoot2<ITYPE>> diff_XY_omega((diff_X_omega_size * pre_results[5].size()) + (pre_results[4].size() * diff_Y_omega_size) + (diff_X_omega_size * diff_Y_omega_size));
+    std::vector<ZRoot2<ITYPE>> diff_ZW_omega((diff_Z_omega_size * pre_results[7].size()) + (pre_results[6].size() * diff_W_omega_size) + (diff_Z_omega_size * diff_W_omega_size));
+
 
 #pragma omp parallel sections
     {
 #pragma omp section
         {
-            for(long long i = 0; i < X_size; i++){
-                for(long long j = 0; j < Y_size; j++) XY[i*Y_size + j] = X_squared[i] + Y_squared[j];
+            auto diff_XY_ite = diff_XY.begin();
+            for(auto diff_x_sq : diff_X_squared){
+                for(auto y_sq : pre_results[1]) {*diff_XY_ite = diff_x_sq + y_sq; diff_XY_ite++;}
+            }
+            for(auto x_sq : pre_results[0]){
+                for(auto diff_y_sq : diff_Y_squared) {*diff_XY_ite = x_sq + diff_y_sq; diff_XY_ite++;}
+            }
+            for(auto diff_x_sq : diff_X_squared){
+                for(auto diff_y_sq : diff_Y_squared) {*diff_XY_ite = diff_x_sq + diff_y_sq; diff_XY_ite++;}
             }
         }
+
 #pragma omp section
-        {
-            for(long long i = 0; i < Z_size; i++){
-                for(long long j = 0; j < W_size; j++) ZW[i*W_size + j] = Z_squared[i] + W_squared[j];
+        {            
+            auto diff_ZW_ite = diff_ZW.begin();
+            for(auto diff_z_sq : diff_Z_squared){
+                for(auto w_sq : pre_results[3]) {*diff_ZW_ite = diff_z_sq + w_sq; diff_ZW_ite++;}
+            }
+            for(auto z_sq : pre_results[2]){
+                for(auto diff_w_sq : diff_W_squared) {*diff_ZW_ite = z_sq + diff_w_sq; diff_ZW_ite++;}
+            }
+            for(auto diff_z_sq : diff_Z_squared){
+                for(auto diff_w_sq : diff_W_squared) {*diff_ZW_ite = diff_z_sq + diff_w_sq; ++diff_ZW_ite;}
             }
         }
+
 #pragma omp section
         {
-            for(long long i = 0; i < X_omega_size; i++){
-                for(long long j = 0; j < Y_omega_size; j++) XY_omega[i*Y_omega_size + j] = X_omega_squared[i] + Y_omega_squared[j];
+            auto diff_XY_omega_ite = diff_XY_omega.begin();
+            for(auto diff_x_omega_sq : diff_X_omega_squared){
+                for(auto y_omega_sq : pre_results[5]) {*diff_XY_omega_ite = diff_x_omega_sq + y_omega_sq; diff_XY_omega_ite++;}
+            }
+            for(auto x_omega_sq : pre_results[4]){
+                for(auto diff_y_omega_sq : diff_Y_omega_squared) {*diff_XY_omega_ite = x_omega_sq + diff_y_omega_sq; diff_XY_omega_ite++;}
+            }
+            for(auto diff_x_omega_sq : diff_X_omega_squared){
+                for(auto diff_y_omega_sq : diff_Y_omega_squared) {*diff_XY_omega_ite = diff_x_omega_sq + diff_y_omega_sq; diff_XY_omega_ite++;}
             }
         }
+
 #pragma omp section
         {
-            for(long long i = 0; i < Z_omega_size; i++){
-                for(long long j = 0; j < W_omega_size; j++) ZW_omega[i*W_omega_size + j] = Z_omega_squared[i] + W_omega_squared[j];
+            auto diff_ZW_omega_ite = diff_ZW_omega.begin();
+            for(auto diff_z_omega_sq : diff_Z_omega_squared){
+                for(auto w_omega_sq : pre_results[7]) {*diff_ZW_omega_ite = diff_z_omega_sq + w_omega_sq; diff_ZW_omega_ite++;}
+            }
+            for(auto z_omega_sq : pre_results[6]){
+                for(auto diff_w_omega_sq : diff_W_omega_squared) {*diff_ZW_omega_ite = z_omega_sq + diff_w_omega_sq; diff_ZW_omega_ite++;}
+            }
+            for(auto diff_z_omega_sq : diff_Z_omega_squared){
+                for(auto diff_w_omega_sq : diff_W_omega_squared) {*diff_ZW_omega_ite = diff_z_omega_sq + diff_w_omega_sq; diff_ZW_omega_ite++;}
             }
         }
     }
 
 
-    start = std::chrono::system_clock::now();
 #pragma omp parallel sections
     {
 #pragma omp section
-        std::sort(std::execution::par, XY.begin(), XY.end());
+        std::sort(std::execution::par, diff_XY.begin(), diff_XY.end());
 #pragma omp section
-        std::sort(std::execution::par, ZW.begin(), ZW.end());
+        std::sort(std::execution::par, diff_ZW.begin(), diff_ZW.end());
 #pragma omp section
-        std::sort(std::execution::par, XY_omega.begin(), XY_omega.end());
+        std::sort(std::execution::par, diff_XY_omega.begin(), diff_XY_omega.end());
 #pragma omp section
-        std::sort(std::execution::par, ZW_omega.begin(), ZW_omega.end());
+        std::sort(std::execution::par, diff_ZW_omega.begin(), diff_ZW_omega.end());
     }
-    end = std::chrono::system_clock::now();
-    diff_time = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0);
-    cout << diff_time << endl;
-    // std::sort(std::execution::par, XY.begin(), XY.end());
-    // std::sort(std::execution::par, ZW.begin(), ZW.end());
-    // std::sort(std::execution::par, XY_omega.begin(), XY_omega.end());
-    // std::sort(std::execution::par, ZW_omega.begin(), ZW_omega.end());
 
+    std::vector<ZRoot2<ITYPE>> XY(pre_results[8].size() + diff_XY.size());
+    std::vector<ZRoot2<ITYPE>> ZW(pre_results[9].size() + diff_ZW.size());
+    std::vector<ZRoot2<ITYPE>> XY_omega(pre_results[10].size() + diff_XY_omega.size());
+    std::vector<ZRoot2<ITYPE>> ZW_omega(pre_results[11].size() + diff_ZW_omega.size());
+
+
+#pragma omp parallel sections
+    {
+#pragma omp section
+        std::merge(diff_XY.begin(), diff_XY.end(), pre_results[8].begin(), pre_results[8].end(), XY.begin());
+#pragma omp section
+        std::merge(diff_ZW.begin(), diff_ZW.end(), pre_results[9].begin(), pre_results[9].end(), ZW.begin());
+#pragma omp section
+        std::merge(diff_XY_omega.begin(), diff_XY_omega.end(), pre_results[10].begin(), pre_results[10].end(), XY_omega.begin());
+#pragma omp section
+        std::merge(diff_ZW_omega.begin(), diff_ZW_omega.end(), pre_results[11].begin(), pre_results[11].end(), ZW_omega.begin());
+    }
 
     ZRoot2<ITYPE> pow_2_k = (ITYPE)1<<k; 
     ZRoot2<ITYPE> pow_2_k_1 = (ITYPE)1<<(k+1); 
@@ -226,9 +271,8 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
     auto convert2 = [](ZRoot2<ITYPE> re, ZRoot2<ITYPE> im) -> ZOmega<ITYPE>{ return {(-re.a+im.a) / 2, im.b, (re.a+im.a) / 2, re.b}; };
 
 
-    start = std::chrono::system_clock::now();
-    auto solutions1 = subroutine(X, Y, Z, W, X_squared, Y_squared, Z_squared, W_squared, XY, ZW, pow_2_k);
-    for(auto [x, y, z, w]: solutions1) solutions_total.push_back({convert1(x,y), convert1(z,w)});
+    auto XYZW1 = subroutine(X, Y, Z, W, X_squared, Y_squared, Z_squared, W_squared, XY, ZW, pow_2_k);
+    for(auto [x, y, z, w]: XYZW1) solutions_total.push_back({convert1(x,y), convert1(z,w)});
 
     ZRoot2<ITYPE> sqrt2_ZRoot2 = {0,1};
     for(auto &x : X) x = sqrt2_ZRoot2 * x; 
@@ -274,12 +318,23 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
     for(auto ele : solutions3) solutions_total.push_back(ele);
     for(auto ele : solutions4) solutions_total.push_back(ele);
 
-    end = std::chrono::system_clock::now();
-    diff_time = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0);
-    cout << diff_time << endl;
 
-    std::vector<quaternion<FTYPE>> ret;
+    for(auto &x_sq : X_squared) x_sq = {x_sq.a / 2, x_sq.b / 2};
+    for(auto &y_sq : Y_squared) y_sq = {y_sq.a / 2, y_sq.b / 2};
+    for(auto &z_sq : Z_squared) z_sq = {z_sq.a / 2, z_sq.b / 2};
+    for(auto &w_sq : W_squared) w_sq = {w_sq.a / 2, w_sq.b / 2};
+
+#pragma omp parallel for
+    for(auto &xy : XY) xy = {xy.a / 2, xy.b / 2};
+#pragma omp parallel for
+    for(auto &zw : ZW) zw = {zw.a / 2, zw.b / 2};
+
+
+    std::vector<Pair_ZOmega<ITYPE>> ret;
     for(auto [u,t] : solutions_total){
+        // std::string str = Exact_synthesis(u, t, k, true);
+        // cout << std::count(str.begin(), str.end(), 'T') << endl;
+
         // std::cout << x << " " << y << std::endl;
         quaternion<FTYPE> V = to_quaterion<ITYPE, FTYPE>(u, t);
         V = V / V.norm();
@@ -298,10 +353,26 @@ std::vector<quaternion<FTYPE>> enumerate_u_t(quaternion<FTYPE> U, FTYPE eps, int
             quaternion<FTYPE> cand1 = U - V;
             quaternion<FTYPE> cand2 = U + V;
 
-            if(cand1.norm() < cand2.norm()) ret.push_back(V);
-            else ret.push_back(-V);
+            if(cand1.norm() < cand2.norm()) ret.push_back({u, t});
+            else ret.push_back({-u, -t});
         }
     }
 
-    return ret;
+    return {ret, {X_squared, Y_squared, Z_squared, W_squared,
+                  X_omega_squared, Y_omega_squared, Z_omega_squared, W_omega_squared, 
+                  XY, ZW, XY_omega, ZW_omega}};
+}
+
+
+template<typename ITYPE, typename FTYPE>
+std::pair< std::vector<std::tuple<ZOmega<ITYPE>, ZOmega<ITYPE>, int>>, std::array<std::vector< ZRoot2<ITYPE> >, 12> >
+enumerate_u_t_wrapper(quaternion<FTYPE> U, FTYPE eps, int k, const std::array<std::vector<ZRoot2<ITYPE>>, 12>& pre_results, bool parity){
+    if(parity){
+        quaternion<FTYPE> omega_sqrt(cos(boost::math::constants::pi<FTYPE>() / 8), sin(boost::math::constants::pi<FTYPE>() / 8), 0, 0);
+        U = omega_sqrt * U;
+    }
+    auto [ret1, ret2] = enumerate_u_t<ITYPE, FTYPE>(U, eps, k, pre_results);
+    std::vector<std::tuple<ZOmega<ITYPE>, ZOmega<ITYPE>, int>> ret1_prime;
+    for(auto [u, t] : ret1) ret1_prime.push_back({u, t, k});
+    return {ret1_prime, ret2};
 }
