@@ -79,11 +79,16 @@ namespace SU2_Compiler
 
     quaternion to_quaternion(const U2_ZOmega& U)
     {
-        CTYPE u = ZOmega_to_FTYPE(U.u);
-        CTYPE t = ZOmega_to_FTYPE(U.t);
+        CTYPE phase = 1.0;
+        for(int i = 0; i < U.l; i++) phase *= sqrt_omega;
+
+        CTYPE u = ZOmega_to_FTYPE(U.u) * std::conj(phase);
+        CTYPE t = ZOmega_to_FTYPE(U.t) * std::conj(phase);
+
+        u /= pow(sqrt2, (FTYPE)U.k);
+        t /= pow(sqrt2, (FTYPE)U.k);        
         
         quaternion ret(u.real(), u.imag(), t.real(), t.imag());
-        ret.unitalize();
         return ret;
     }
 

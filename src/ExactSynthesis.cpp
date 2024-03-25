@@ -268,6 +268,12 @@ namespace SU2_Compiler
         return ret;
     }
 
+    int get_T_count(const U2_ZOmega& U)
+    {
+        auto [U_SO3, k_SO3] = U2_to_SO3(U.get_Matrix(), U.k);
+        return k_SO3;
+    }
+
     quaternion to_quaternion(std::string seq)
     {
         quaternion H(0, -1, 0, -1);

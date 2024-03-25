@@ -7,7 +7,7 @@
 namespace SU2_Compiler
 {
     using ITYPE = long long;
-    using UTYPE = long unsigned int;
+    using UINT = long unsigned int;
 
     // using FTYPE = boost::multiprecision::cpp_dec_float_50;
     using FTYPE = double;

@@ -29,7 +29,7 @@ namespace SU2_Compiler
         FTYPE norm() const { return sqrt(a*a + b*b + c*c + d*d); }
         FTYPE trace() const { return 2 * a; }
         Matrix2cf get_Matrix() const;
-        bool is_unitary(FTYPE tol) const;
+        bool is_unitary(FTYPE tol=1e-14) const;
         void unitalize();
 
         quaternion& operator*=(const quaternion& r);

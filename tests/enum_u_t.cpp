@@ -12,7 +12,7 @@ int main(){
     quaternion targetU = random_unitary(1234);
     cout << targetU << endl;
 
-    auto availableU = enum_u_t(targetU, eps, 20, {});
+    auto availableU = enum_u_t(targetU, eps, 20, 0, {});
 
     cout << availableU.first.size() << endl;
 }

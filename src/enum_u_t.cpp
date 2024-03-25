@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <array>
+#include <set>
 #include <algorithm>
 #include <execution>
 
@@ -89,8 +90,14 @@ namespace SU2_Compiler
 
 
     std::pair< std::vector< U2_ZOmega >, std::array<std::vector< ZRoot2 >, 12> >
-    enum_u_t(quaternion U, FTYPE eps, int k, const std::array<std::vector< ZRoot2 >, 12>& pre_results = {})
+    enum_u_t(quaternion U, FTYPE eps, int k, int l, const std::array<std::vector< ZRoot2 >, 12>& pre_results)
     {
+        quaternion phase(1,0,0,0);
+        quaternion sqrt_omega_FTYPE(sqrt_omega.real(), sqrt_omega.imag(), 0, 0);
+        for(int i = 0; i < l; i++) phase *= sqrt_omega_FTYPE;
+        U = U * phase;
+        
+        
         FTYPE a = U.a;
         FTYPE b = U.b;
         FTYPE c = U.c;
@@ -294,7 +301,7 @@ namespace SU2_Compiler
 
 
         auto XYZW1 = subroutine(X, Y, Z, W, X_squared, Y_squared, Z_squared, W_squared, XY, ZW, pow_2_k);
-        for(auto [x, y, z, w]: XYZW1) solutions_total.push_back({convert1(x,y), convert1(z,w), 0, k});
+        for(auto [x, y, z, w]: XYZW1) solutions_total.push_back({convert1(x,y), convert1(z,w), l, k});
 
         ZRoot2 sqrt2_ZRoot2 = {0,1};
         for(auto &x : X) x = sqrt2_ZRoot2 * x; 
@@ -318,21 +325,21 @@ namespace SU2_Compiler
             {
                 auto XYZW2 = subroutine(X, Y, Z_omega, W_omega,
                                         X_squared, Y_squared, Z_omega_squared, W_omega_squared, XY, ZW_omega, pow_2_k_1);
-                for(auto [x, y, z, w]: XYZW2) solutions2.push_back({convert2(x,y), convert2(z,w), 0, k});
+                for(auto [x, y, z, w]: XYZW2) solutions2.push_back({convert2(x,y), convert2(z,w), l, k});
             }
     #pragma omp section
             {
                 auto XYZW3 = subroutine(X_omega, Y_omega, Z, W, 
                                         X_omega_squared, Y_omega_squared, Z_squared, W_squared, 
                                         XY_omega, ZW, pow_2_k_1);
-                for(auto [x, y, z, w]: XYZW3) solutions3.push_back({convert2(x,y), convert2(z,w), 0, k});
+                for(auto [x, y, z, w]: XYZW3) solutions3.push_back({convert2(x,y), convert2(z,w), l, k});
             }
     #pragma omp section
             {
                 auto XYZW4 = subroutine(X_omega, Y_omega, Z_omega, W_omega,
                                         X_omega_squared, Y_omega_squared, Z_omega_squared, W_omega_squared,
                                         XY_omega, ZW_omega, pow_2_k_1);
-                for(auto [x, y, z, w]: XYZW4) solutions4.push_back({convert2(x,y), convert2(z,w), 0, k});
+                for(auto [x, y, z, w]: XYZW4) solutions4.push_back({convert2(x,y), convert2(z,w), l, k});
             }
         }
 
@@ -389,16 +396,3 @@ namespace SU2_Compiler
                     XY, ZW, XY_omega, ZW_omega}};
     }
 }
-
-// template<typename ITYPE, typename FTYPE>
-// std::pair< std::vector<std::tuple<ZOmega<ITYPE>, ZOmega<ITYPE>, int>>, std::array<std::vector< ZRoot2 >, 12> >
-// enumerate_u_t_wrapper(quaternion<FTYPE> U, FTYPE eps, int k, const std::array<std::vector<ZRoot2>, 12>& pre_results, bool parity){
-//     if(parity){
-//         quaternion<FTYPE> omega_sqrt(cos(boost::math::constants::pi<FTYPE>() / 8), sin(boost::math::constants::pi<FTYPE>() / 8), 0, 0);
-//         U = omega_sqrt * U;
-//     }
-//     auto [ret1, ret2] = enumerate_u_t<ITYPE, FTYPE>(U, eps, k, pre_results);
-//     std::vector<std::tuple<ZOmega<ITYPE>, ZOmega<ITYPE>, int>> ret1_prime;
-//     for(auto [u, t] : ret1) ret1_prime.push_back({u, t, k});
-//     return {ret1_prime, ret2};
-// }

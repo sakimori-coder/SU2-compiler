@@ -10,5 +10,5 @@
 namespace SU2_Compiler
 {
     std::pair< std::vector< U2_ZOmega >, std::array<std::vector< ZRoot2 >, 12> >
-    enum_u_t(quaternion U, FTYPE eps, int k, const std::array<std::vector< ZRoot2 >, 12>& pre_results);
+    enum_u_t(quaternion U, FTYPE eps, int k, int l, const std::array<std::vector< ZRoot2 >, 12>& pre_results = {});
 }

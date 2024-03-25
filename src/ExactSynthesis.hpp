@@ -15,5 +15,6 @@ namespace SU2_Compiler
     std::pair<Mat3ZRoot2, int> U2_to_SO3(const U2_ZOmega& U);
     Eigen::Matrix3i parity(const Mat3ZRoot2& A);
     std::string ExactSynthesis(const U2_ZOmega& U);
+    int get_T_count(const U2_ZOmega& U);
     quaternion to_quaternion(std::string);
 }

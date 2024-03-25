@@ -16,7 +16,7 @@ namespace SU2_Compiler
         return ret;
     }
 
-    bool quaternion::is_unitary(FTYPE tol=1e-14) const
+    bool quaternion::is_unitary(FTYPE tol) const
     {
         if(abs(this->norm() - 1) < tol) return true;
         else return false;
