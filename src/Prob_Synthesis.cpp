@@ -18,23 +18,6 @@
 
 namespace SU2_Compiler
 {
-    template <UINT dim>
-    Eigen::Matrix<CTYPE, dim*dim, dim*dim> Choi_Jamiolkowski(Eigen::Matrix<CTYPE, dim, dim> U)
-    {
-        Eigen::Matrix<CTYPE, dim, dim> U_dag;
-        U_dag = U.adjoint();
-        Eigen::Matrix<CTYPE, dim*dim, dim*dim> CJ_U;
-        
-        for(int i = 0; i < dim; i++){
-            for(int j = 0; j < dim; j++){
-                CJ_U(Eigen::seq(i*dim, (i+1)*dim-1), Eigen::seq(j*dim, (j+1)*dim-1)) = U.col(i) * U_dag.row(j);
-            }
-        }
-
-        return CJ_U;
-    }
-
-    
     Eigen::Matrix<FTYPE, 4, 4> CJ_MB(Eigen::Matrix<CTYPE, 2, 2> U)
     {
         Eigen::Matrix<CTYPE, 4, 4> CJ_U = Choi_Jamiolkowski<2>(U);
@@ -73,8 +56,11 @@ namespace SU2_Compiler
     FTYPE distance(quaternion A, std::vector<quaternion> B, std::vector<FTYPE> prob)
     {
         const int N = B.size();
+        std::cout << "N " << N << std::endl;
         
         Eigen::Matrix<FTYPE, 4, 4> CJ_A_MB = CJ_MB(A.get_Matrix());
+
+
         std::vector<Eigen::Matrix<FTYPE, 4, 4>> CJ_B_MB(N);
         for(int i = 0; i < N; i++) CJ_B_MB[i] = CJ_MB(B[i].get_Matrix());
 
@@ -133,14 +119,27 @@ namespace SU2_Compiler
     }
 
     
+    Eigen::Matrix<FTYPE, 4, 4> targetCJUMB;
+    void set_targetCJUMB(){
+        std::vector<FTYPE> P(100);
+        for(int i = 0; i < 100; i++){
+            P[i] = (FTYPE)1.0 / (FTYPE)100;
+        }
+        for(int i = 0; i < 100; i++){
+            quaternion U = random_unitary();
+            targetCJUMB += P[i] * CJ_MB(U.get_Matrix());
+        }
+    }
+
+
     std::pair<FTYPE, std::vector<FTYPE>> get_optimal_prob(std::vector<quaternion> availableU, quaternion targetU)
     {
         const int N = availableU.size();
         
         std::vector<Eigen::Matrix<FTYPE, 4, 4>> availableCJUMB(N);
         for(int i = 0; i < N; i++) availableCJUMB[i] = CJ_MB(availableU[i].get_Matrix());
-        Eigen::Matrix<FTYPE, 4, 4> targetCJUMB = CJ_MB(targetU.get_Matrix());
-
+        // Eigen::Matrix<FTYPE, 4, 4> targetCJUMB = CJ_MB(targetU.get_Matrix());
+        
         
         std::vector<Eigen::Matrix<FTYPE, 4, 4>> Symmetric_basis(10, Eigen::Matrix<FTYPE, 4, 4>::Zero(4,4));
         for(int i = 0; i < 4; i++) Symmetric_basis[i](i,i) = 1;
@@ -155,7 +154,7 @@ namespace SU2_Compiler
 
         // 変数の並び順は (Sの変数10個, 混合確率)
         std::vector<FTYPE> C(num_variable, 0);
-        C[0] = C[1] = C[2] = C[3] = 0.5;
+        C[0] = C[1] = C[2] = C[3] = 1 / (FTYPE)0.5;
 
         std::vector<std::vector<FTYPE>> ZERO_mat(4, std::vector<FTYPE>(4, 0));
         std::vector<std::vector<FTYPE>> ZERO_vec(1, std::vector<FTYPE>(N, 0)); 
@@ -210,10 +209,14 @@ namespace SU2_Compiler
             
             std::vector<quaternion> availableU;
             std::vector<U2_ZOmega> availableU_ZOmega;
+            std::vector<std::pair<ZOmega, ZOmega>> memo;
             for(auto U_ZOmega : new_availableU){
                 if(get_T_count(U_ZOmega) > T_count) continue; 
                 
                 quaternion U = to_quaternion(U_ZOmega);
+                // std::cout << std::setprecision(50) << U * adjoint(U) << std::endl;
+                // std::cout << distance(targetU, U) - 2*eps_prime << std::endl;
+                memo.push_back({U_ZOmega.u, U_ZOmega.t});
                 availableU.push_back(U);
                 availableU_ZOmega.push_back(U_ZOmega);
             }
@@ -236,13 +239,14 @@ namespace SU2_Compiler
 
             FTYPE min_dist = 1.0;
             for(auto u : availableU) min_dist = std::min(min_dist, distance(targetU, u));
-            // if(!availableU.empty() && min_dist * min_dist > eps) return {{}, {}};
+            if(!availableU.empty() && min_dist * min_dist > eps) return {{}, {}};
 
             if(eps_prime > 1 || check_eps_net(availableU, targetU, eps_prime)){
                 auto [opt_dist, prob] = get_optimal_prob(availableU, targetU);
                 for(auto p : prob) std::cout << p << " ";
                 std::cout << std::endl;
                 std::cout << "下限 " << min_dist*min_dist << std::endl;
+                std::cout << opt_dist << std::endl;
                 // std::cout << std::setprecision(20) << diamond_distance(targetU, availableU, prob) << std::endl;
 
                 std::vector<std::pair<FTYPE, U2_ZOmega>> ret;
@@ -262,13 +266,20 @@ namespace SU2_Compiler
     {
         FTYPE eps_sqrt = sqrt(eps);
 
-        int T_count = 0;
+        int T_count = 10;
         std::vector< std::pair<FTYPE, U2_ZOmega> > optimal_CliffordT;
         std::vector<U2_ZOmega> pre_availableU_ZOmega = {};
         while(true){
+            std::cout << "Tカウント " << T_count << std::endl;
             std::tie(optimal_CliffordT, pre_availableU_ZOmega) = optimal_prob_unitary(T_count, targetU, eps, pre_availableU_ZOmega);
             
-            if(distance(targetU, optimal_CliffordT) < eps)
+            if(distance(targetU, optimal_CliffordT) < eps){
+                std::vector<std::pair<FTYPE, std::string>> ret;
+                for(auto [p, U_ZOmega] : optimal_CliffordT){
+                    ret.push_back({p, ExactSynthesis(U_ZOmega)});
+                }
+                return ret;
+            }
                 
             T_count++;
         }

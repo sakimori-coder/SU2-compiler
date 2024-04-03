@@ -56,7 +56,7 @@ namespace SU2_Compiler
 
     std::ostream& operator<<(std::ostream& os, const quaternion& U)
     {
-        os << U.a << ", " << U.b << ", " << U.c << ", " << U.d;
+        os << "(" << U.a << ", " << U.b << ", " << U.c << ", " << U.d << ")";
         return os;
     }
 
@@ -72,7 +72,7 @@ namespace SU2_Compiler
         return sqrt(1.0 - (tr*tr) / 4.0);
     }
 
-    quaternion random_unitary(size_t seed=-1)
+    quaternion random_unitary(size_t seed)
     {
         std::random_device rd;
         std::default_random_engine eng(rd());

@@ -39,6 +39,6 @@ namespace SU2_Compiler
     std::ostream& operator<<(std::ostream& os, const quaternion& U);
     quaternion adjoint(const quaternion& U);
     FTYPE distance(const quaternion& U, const quaternion& V);
-    quaternion random_unitary(size_t seed);
+    quaternion random_unitary(size_t seed=-1);
     
 }

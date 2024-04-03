@@ -26,6 +26,7 @@ namespace SU2_Compiler
 
         Mat2ZOmega get_Matrix() const;    
 
+        bool operator==(const U2_ZOmega& r) const; 
         U2_ZOmega& operator*=(const U2_ZOmega& r);
         U2_ZOmega operator*(const U2_ZOmega& r) const;
         U2_ZOmega operator-() const;

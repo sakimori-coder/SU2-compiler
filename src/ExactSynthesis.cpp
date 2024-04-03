@@ -200,7 +200,7 @@ namespace SU2_Compiler
     {
         Eigen::Matrix3i Ap;
         for(int i = 0; i < 3; i++){
-            for(int j = 0; j < 3; j++) Ap(i,j) = abs(A(i,j).a % 2);
+            for(int j = 0; j < 3; j++) Ap(i,j) = std::abs(A(i,j).a % 2);
         }
         return Ap;
     }
@@ -210,11 +210,11 @@ namespace SU2_Compiler
     {
         auto [U_SO3, k_SO3] = U2_to_SO3(U.get_Matrix(), U.k);
 
-        Mat2ZOmega tmp = U.get_Matrix();
-        for(int i = 0; i < 2; i++){
-            for(int j = 0; j < 2; j++) std::cout << tmp(i,j) << " ";
-            std::cout << std::endl;
-        }
+        // Mat2ZOmega tmp = U.get_Matrix();
+        // for(int i = 0; i < 2; i++){
+        //     for(int j = 0; j < 2; j++) std::cout << tmp(i,j) << " ";
+        //     std::cout << std::endl;
+        // }
 
         Mat3ZRoot2 H_SO3, S_SO3, T_SO3;
         H_SO3(0,0) = H_SO3(0,1) = H_SO3(1,0) = H_SO3(1,2) = H_SO3(2,1) = H_SO3(2,2) = 0;
@@ -251,11 +251,6 @@ namespace SU2_Compiler
         
             reduction(U_SO3, k_SO3);
         }
-
-        // for(int i = 0; i < 3; i++){
-        //     for(int j = 0; j < 3; j++) std::cout << U_SO3(i,j) << " ";
-        //     std::cout << std::endl;
-        // }
 
         for(auto [seq, C] : Clifford){
             bool f = true;

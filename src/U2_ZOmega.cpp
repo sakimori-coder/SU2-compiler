@@ -15,6 +15,10 @@ namespace SU2_Compiler
         return ret;
     }
 
+    bool U2_ZOmega::operator==(const U2_ZOmega& r) const
+    {
+        return (u == r.u && t == r.t && l == r.l && k == r.k);
+    }
 
     inline U2_ZOmega& U2_ZOmega::operator*=(const U2_ZOmega& r)
     {
@@ -79,7 +83,7 @@ namespace SU2_Compiler
 
     quaternion to_quaternion(const U2_ZOmega& U)
     {
-        CTYPE phase = 1.0;
+        CTYPE phase = {1.0, 0.0};
         for(int i = 0; i < U.l; i++) phase *= sqrt_omega;
 
         CTYPE u = ZOmega_to_FTYPE(U.u) * std::conj(phase);

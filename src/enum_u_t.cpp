@@ -61,7 +61,6 @@ namespace SU2_Compiler
     {
         std::vector<std::array<T, 4>> ret;
         auto solutions = two_points_technique(XY.begin(), XY.end(), ZW.begin(), ZW.end(), key);
-        std::cout << "size " << solutions.size() << " " << XY[0] << " " << std::endl;
 
         for(auto [xy_squared, zw_squared] : solutions){
             std::set<std::pair<T, T>> xy_ans, zw_ans;
@@ -92,11 +91,11 @@ namespace SU2_Compiler
     std::pair< std::vector< U2_ZOmega >, std::array<std::vector< ZRoot2 >, 12> >
     enum_u_t(quaternion U, FTYPE eps, int k, int l, const std::array<std::vector< ZRoot2 >, 12>& pre_results)
     {
+        quaternion U_copy = U;
         quaternion phase(1,0,0,0);
         quaternion sqrt_omega_FTYPE(sqrt_omega.real(), sqrt_omega.imag(), 0, 0);
         for(int i = 0; i < l; i++) phase *= sqrt_omega_FTYPE;
         U = U * phase;
-        
         
         FTYPE a = U.a;
         FTYPE b = U.b;
@@ -132,8 +131,8 @@ namespace SU2_Compiler
         const long unsigned int Z_omega_size = Z_omega.size();
         const long unsigned int W_omega_size = W_omega.size();
 
-        std::cout << X_size << " " << Y_size << " " << Z_size << " " << W_size << std::endl; 
-        std::cout << X_omega_size << " " << Y_omega_size << " " << Z_omega_size << " " << W_omega_size << std::endl; 
+        // std::cout << X_size << " " << Y_size << " " << Z_size << " " << W_size << std::endl; 
+        // std::cout << X_omega_size << " " << Y_omega_size << " " << Z_omega_size << " " << W_omega_size << std::endl; 
 
         std::vector<ZRoot2> X_squared(X_size);
         std::vector<ZRoot2> Y_squared(Y_size);
@@ -357,27 +356,22 @@ namespace SU2_Compiler
         for(auto &xy : XY) xy = {xy.a / 2, xy.b / 2};
     #pragma omp parallel for
         for(auto &zw : ZW) zw = {zw.a / 2, zw.b / 2};
-        
-        std::cout << solutions_total.size() << std::endl;
 
         std::vector<U2_ZOmega> ret;
         for(auto ele : solutions_total){
-            std::string str = ExactSynthesis(ele);
-            cout << str << endl;
-            cout << " " << distance(U, to_quaternion(str)) << endl;
-
-            // std::cout << x << " " << y << std::endl;
             quaternion V = to_quaternion(ele);
-            V.unitalize();
+            
+            // std::cout << U_copy << std::endl;
+            // std::cout << V << std::endl;
 
-            FTYPE d1 = distance(U,V);
-            std::cout << d1 << std::endl;
+            FTYPE d1 = distance(U_copy, V);
+            // std::cout << d1 << std::endl;
             // FTYPE d2 = min(distance_max(U,V), distance_max(U,-V));
             // if(d1 < d2/sqrt2) std::cout << "間違ってる" << std::endl;
 
             // std::cout << d1 << std::endl;
 
-            if(distance(U, V) <= eps){
+            if(distance(U_copy, V) <= eps){
                 // std::string str = Exact_synthesis(u, t, k);
                 // cout << str << endl;
                 // cout << std::count(str.begin(), str.end(), 'T') << endl;
@@ -390,6 +384,12 @@ namespace SU2_Compiler
                 ret.push_back(ele);
             }
         }
+
+        auto comp = [](const U2_ZOmega& l, const U2_ZOmega& r){
+            return l.u < r.u || ((l.u == r.u) && l.t < r.t);
+        };
+        std::sort(ret.begin(), ret.end(), comp);
+        ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
 
         return {ret, {X_squared, Y_squared, Z_squared, W_squared,
                     X_omega_squared, Y_omega_squared, Z_omega_squared, W_omega_squared, 

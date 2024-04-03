@@ -1,4 +1,8 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <algorithm>
+#include <cctype>
 #include <Eigen/Core>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/algorithm/string.hpp>
@@ -11,7 +15,7 @@ using vector_4d = std::vector<std::vector<std::vector<std::vector<T>>>>;
 
 template<typename T>
 void input_sdpa_data(std::vector<T>& C, vector_4d<T>& F, std::ofstream& ofs){
-    ofs << std::setprecision(30);
+    ofs << std::setprecision(50);
     
     int mDIM = C.size();
     int nBLOCK = F[0].size();
@@ -84,6 +88,7 @@ std::vector<T> output_sdpa_data(std::ifstream& ifs){
     boost::algorithm::split(xVec_str, line, boost::is_any_of(","));
     std::vector<T> xVec;
     for(std::string x_str : xVec_str){
+        boost::algorithm::trim(x_str);
         T x = stof<T>(x_str);
         xVec.push_back(x);
     }   
@@ -104,7 +109,7 @@ std::vector<T> sdpa_solver(std::vector<T>& C, vector_4d<T>& F){
     }
 
     input_sdpa_data(C, F, ofs);
-    std::string command_sdpa = "sdpa_qd " + filename1 + " " + filename2 + " > " + filename3;
+    std::string command_sdpa = "sdpa_gmp " + filename1 + " " + filename2 + " > " + filename3;
     if(system(command_sdpa.c_str()) == -1){
         std::cout << "SDPコマンドが正常に動作しませんでした" << std::endl;
     }

@@ -1,7 +1,7 @@
 CXXFLAGS = -O3 -fopenmp
 
 
-target : test_Prob_Synthesis.o eps_net_verification.o linalg.o Prob_Synthesis.o ExactSynthesis.o enum_u_t.o grid_solver.o U2_ZOmega.o quaternion.o rings.o
+target : test_Prob_Synthesis.o eps_net_verification.o Prob_Synthesis.o ExactSynthesis.o enum_u_t.o grid_solver.o U2_ZOmega.o quaternion.o rings.o
 	g++ $^ $(CXXFLAGS) -ltbb -o tests/Prob_Synthesis
 
 test_Prob_Synthesis.o : tests/Prob_Synthesis.cpp src/Prob_Synthesis.cpp
@@ -17,9 +17,6 @@ Prob_Synthesis.o : src/Prob_Synthesis.cpp
 	g++ -c $< $(CXXFLAGS)
 
 eps_net_verification.o : src/eps_net_verification.cpp
-	g++ -c $< $(CXXFLAGS)
-
-linalg.o : src/linalg.cpp
 	g++ -c $< $(CXXFLAGS)
 
 ExactSynthesis.o : src/ExactSynthesis.cpp
@@ -42,4 +39,6 @@ quaternion.o : src/quaternion.cpp
 
 
 clean : 
-	rm quaternion.o rings.o U2_ZOmega.o grid_solver.o enum_u_t.o ExactSynthesis.o
+	rm quaternion.o rings.o U2_ZOmega.o grid_solver.o \
+	   enum_u_t.o ExactSynthesis.o eps_net_verification.o \
+	   Prob_Synthesis.o

@@ -83,6 +83,7 @@ namespace SU2_Compiler
         ZRoot2 imag() const { return {b, (c+a) / 2}; }   // βを返す
     
         // 比較演算子
+        bool operator<(const ZOmega& r) const;
         bool operator==(const ZOmega& r) const;
         bool operator!=(const ZOmega& r) const;
         // 複合代入演算子

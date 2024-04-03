@@ -1,6 +1,8 @@
 #include "rings.hpp"
 #include "type.hpp"
 
+#include <array>
+
 namespace SU2_Compiler{
 /*
     ZRoot2の定義
@@ -122,6 +124,12 @@ namespace SU2_Compiler{
     }
 
     // 比較演算子
+    bool ZOmega::operator<(const ZOmega& r) const
+    {
+        std::array<ITYPE, 4> ll = {a, b, c, d};
+        std::array<ITYPE, 4> rr = {r.a, r.b, r.c, r.d};
+        return ll < rr;
+    }
     bool ZOmega::operator==(const ZOmega& r) const{ return a == r.a && b == r.b && c == r.c && d == r.d; }
     bool ZOmega::operator!=(const ZOmega& r) const{ return !(*this == r); }
 
