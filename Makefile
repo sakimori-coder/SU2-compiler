@@ -1,7 +1,13 @@
 CXXFLAGS = -O3 -fopenmp
 
 
-target : test_Prob_Synthesis.o eps_net_verification.o Prob_Synthesis.o ExactSynthesis.o enum_u_t.o grid_solver.o U2_ZOmega.o quaternion.o rings.o
+bench_Prob_Unitary_Synthesis : bench_Prob_Unitary_Synthesis.o eps_net_verification.o Prob_Synthesis.o ExactSynthesis.o enum_u_t.o grid_solver.o U2_ZOmega.o quaternion.o rings.o
+	g++ $^ $(CXXFLAGS) -ltbb -o benchmark/Prob_Unitary_Synthesis
+
+bench_Prob_Unitary_Synthesis.o : benchmark/Prob_Unitary_Synthesis.cpp src/Prob_Synthesis.cpp
+	g++ -c $< $(CXXFLAGS) -o $@
+
+test_Prob_Synthesis : test_Prob_Synthesis.o eps_net_verification.o Prob_Synthesis.o ExactSynthesis.o enum_u_t.o grid_solver.o U2_ZOmega.o quaternion.o rings.o
 	g++ $^ $(CXXFLAGS) -ltbb -o tests/Prob_Synthesis
 
 test_Prob_Synthesis.o : tests/Prob_Synthesis.cpp src/Prob_Synthesis.cpp

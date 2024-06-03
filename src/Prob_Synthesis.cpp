@@ -56,7 +56,7 @@ namespace SU2_Compiler
     FTYPE distance(quaternion A, std::vector<quaternion> B, std::vector<FTYPE> prob)
     {
         const int N = B.size();
-        std::cout << "N " << N << std::endl;
+        // std::cout << "N " << N << std::endl;
         
         Eigen::Matrix<FTYPE, 4, 4> CJ_A_MB = CJ_MB(A.get_Matrix());
 
@@ -118,27 +118,13 @@ namespace SU2_Compiler
         return distance(U, B, prob);
     }
 
-    
-    Eigen::Matrix<FTYPE, 4, 4> targetCJUMB;
-    void set_targetCJUMB(){
-        std::vector<FTYPE> P(100);
-        for(int i = 0; i < 100; i++){
-            P[i] = (FTYPE)1.0 / (FTYPE)100;
-        }
-        for(int i = 0; i < 100; i++){
-            quaternion U = random_unitary();
-            targetCJUMB += P[i] * CJ_MB(U.get_Matrix());
-        }
-    }
-
-
     std::pair<FTYPE, std::vector<FTYPE>> get_optimal_prob(std::vector<quaternion> availableU, quaternion targetU)
     {
         const int N = availableU.size();
         
         std::vector<Eigen::Matrix<FTYPE, 4, 4>> availableCJUMB(N);
         for(int i = 0; i < N; i++) availableCJUMB[i] = CJ_MB(availableU[i].get_Matrix());
-        // Eigen::Matrix<FTYPE, 4, 4> targetCJUMB = CJ_MB(targetU.get_Matrix());
+        Eigen::Matrix<FTYPE, 4, 4> targetCJUMB = CJ_MB(targetU.get_Matrix());
         
         
         std::vector<Eigen::Matrix<FTYPE, 4, 4>> Symmetric_basis(10, Eigen::Matrix<FTYPE, 4, 4>::Zero(4,4));
@@ -193,97 +179,106 @@ namespace SU2_Compiler
     }
 
 
-    std::pair<std::vector< std::pair<FTYPE, U2_ZOmega> >, std::vector<U2_ZOmega>>
-    optimal_prob_unitary(int T_count, quaternion targetU, FTYPE eps, std::vector<U2_ZOmega> pre_availableU_ZOmega)
+    // 与えられたTカウント以下で作れる最適な確率混合ユニタリを求める。もし、下限が目的のepsよりも大きい場合は計算を行わない。(本当は奇数・偶数で前の結果を再利用できるが、可読性が著しく悪いので行わない)
+    std::vector< std::pair<FTYPE, U2_ZOmega>>
+    optimal_prob_unitary(int T_count, quaternion targetU, FTYPE target_eps)
     {
-        int k = (T_count + 1) / 2 + 1;
+        int k_odd, k_even;
+        if(T_count % 2){
+            k_odd = (T_count + 3) / 2;
+            k_even = (T_count + 1) / 2;
+        }else{
+            k_odd = (T_count + 2) / 2;
+            k_even = (T_count + 2) / 2;
+        }
 
         FTYPE eps_prime = pow(2.0, -(FTYPE)T_count / 3.0) / 2.0;   // T_count = 3log_2(1/2eps')をeps'について解いた
         FTYPE delta_eps_prime = eps_prime / 5;
 
-        std::vector<U2_ZOmega> new_availableU;
-        std::array<std::vector<ZRoot2>, 12> pre_resluts = {};
+        std::vector<U2_ZOmega> new_availableU_odd, new_availableU_even;
+        std::array<std::vector<ZRoot2>, 12> pre_resluts_odd = {}, pre_resluts_even = {};
 
         while(true){
-            std::tie(new_availableU, pre_resluts) = enum_u_t(targetU, 2.0*eps_prime, k, T_count % 2, pre_resluts);
-            
+            std::tie(new_availableU_odd, pre_resluts_odd) = enum_u_t(targetU, 2.0*eps_prime, k_odd, 1, pre_resluts_odd);
+            std::tie(new_availableU_even, pre_resluts_even) = enum_u_t(targetU, 2.0*eps_prime, k_even, 0, pre_resluts_even);
             std::vector<quaternion> availableU;
             std::vector<U2_ZOmega> availableU_ZOmega;
-            std::vector<std::pair<ZOmega, ZOmega>> memo;
-            for(auto U_ZOmega : new_availableU){
-                if(get_T_count(U_ZOmega) > T_count) continue; 
-                
+
+            for(auto &U_ZOmega : new_availableU_odd){
+                if(get_T_count(U_ZOmega) > T_count) continue;
+
                 quaternion U = to_quaternion(U_ZOmega);
-                // std::cout << std::setprecision(50) << U * adjoint(U) << std::endl;
-                // std::cout << distance(targetU, U) - 2*eps_prime << std::endl;
-                memo.push_back({U_ZOmega.u, U_ZOmega.t});
                 availableU.push_back(U);
                 availableU_ZOmega.push_back(U_ZOmega);
+                //std::cout << U << std::endl;
             }
 
-            // T_count-1の結果なので、偶奇が逆になる
-            for(auto U_ZOmega : pre_availableU_ZOmega){
+            for(auto &U_ZOmega : new_availableU_even){
+                if(get_T_count(U_ZOmega) > T_count) continue;
+
                 quaternion U = to_quaternion(U_ZOmega);
-
-                if(distance(targetU, U) > 2*eps_prime) continue; 
-
                 availableU.push_back(U);
                 availableU_ZOmega.push_back(U_ZOmega);
+                // std::cout << U << std::endl;
             }
-            
-            std::cout << "eps' " << eps_prime << std::endl;
-            std::cout << "利用可能なユニタリの数" << availableU.size() << std::endl;
-            // std::sort(availableU.begin(), availableU.end(), [](quaternion const& lhs, quaternion const& rhs) {return lhs.a < rhs.a;});
-            // for(auto x : availableU) std::cout << std::setprecision(30) << x << std::endl;
-            // exit(0);
 
-            FTYPE min_dist = 1.0;
-            for(auto u : availableU) min_dist = std::min(min_dist, distance(targetU, u));
-            if(!availableU.empty() && min_dist * min_dist > eps) return {{}, {}};
+            FTYPE lower = 1.0;   // availableUで作ることができる確率混合ユニタリの誤差の下限
+            for(auto &U : availableU) lower = min(lower, distance(targetU, U) * distance(targetU, U));
+            // std::cout << "2eps' " << 2*eps_prime << std::endl;
+            // std::cout << "下限 " << lower << std::endl;
+            std::cout << "|X| " << availableU.size() << std::endl;
+            // for(auto U : availableU_ZOmega) std::cout << get_T_count(U) << " " << distance(targetU, to_quaternion(U)) << " " << to_quaternion(U) << std::endl;
+            // FTYPE min_dist = 1.0;
+            // for(int i = 0; i < availableU.size(); i++) for(int j = i+1; j < availableU.size(); j++) min_dist = min(min_dist, distance(availableU[i], availableU[j]));
+            // std::cout << "min_dist " << min_dist << std::endl;
 
-            if(eps_prime > 1 || check_eps_net(availableU, targetU, eps_prime)){
+            if(target_eps < lower && !availableU.empty()) return {};   // 下限未満のときは、目的誤差は達成不可能なのでここで計算をやめる
+
+            // std::cout << "eps_prime " << eps_prime << std::endl;
+            // for(auto &U : availableU) std::cout << distance(targetU, U) << std::endl;
+
+            // 1e-10を足しているのは数値誤差対策
+            if(2*eps_prime >= 1 || check_eps_net(availableU, targetU, eps_prime)){   // 2*eps_prime > 1のときは2ε'近傍がS^3全て
                 auto [opt_dist, prob] = get_optimal_prob(availableU, targetU);
-                for(auto p : prob) std::cout << p << " ";
-                std::cout << std::endl;
-                std::cout << "下限 " << min_dist*min_dist << std::endl;
-                std::cout << opt_dist << std::endl;
-                // std::cout << std::setprecision(20) << diamond_distance(targetU, availableU, prob) << std::endl;
+                if(opt_dist > target_eps) return {};   // 最適な確率混合で目的誤差を達成できてないときは空を返す
 
                 std::vector<std::pair<FTYPE, U2_ZOmega>> ret;
                 for(int i = 0; i < prob.size(); i++){
                     if(prob[i] > 1e-20) ret.push_back({prob[i], availableU_ZOmega[i]});
                 }
-                return {ret, new_availableU};
+                return ret;
             }
-            
+
             eps_prime += delta_eps_prime;
         }
+
     }
 
 
 
     std::vector<std::pair<FTYPE, std::string>> Prob_Unitary_Synthesis(quaternion targetU, FTYPE eps)
     {
-        FTYPE eps_sqrt = sqrt(eps);
-
-        int T_count = 10;
-        std::vector< std::pair<FTYPE, U2_ZOmega> > optimal_CliffordT;
-        std::vector<U2_ZOmega> pre_availableU_ZOmega = {};
-        while(true){
-            std::cout << "Tカウント " << T_count << std::endl;
-            std::tie(optimal_CliffordT, pre_availableU_ZOmega) = optimal_prob_unitary(T_count, targetU, eps, pre_availableU_ZOmega);
-            
-            if(distance(targetU, optimal_CliffordT) < eps){
+        int MAX_T_count = 100;
+        for(int T_count = 0; T_count < MAX_T_count; T_count++){
+            // std::cout << "Tカウント " << T_count << std::endl;
+            auto optimal_mixed_unitary = optimal_prob_unitary(T_count, targetU, eps);
+            if(!optimal_mixed_unitary.empty()){
                 std::vector<std::pair<FTYPE, std::string>> ret;
-                for(auto [p, U_ZOmega] : optimal_CliffordT){
-                    ret.push_back({p, ExactSynthesis(U_ZOmega)});
-                }
+                for(auto& [p, U] : optimal_mixed_unitary) ret.push_back({p, ExactSynthesis(U)});
                 return ret;
-            }
-                
-            T_count++;
+            } 
         }
+
+        return {};   // 警告出すとかが良いのか？
     }
 
+
+
+    int get_T_count(std::vector<std::pair<FTYPE, std::string>> mixed_unitary)
+    {
+        int T_count = -1;
+        for(auto [p, seq] : mixed_unitary) T_count = std::max(T_count, (int)std::count(seq.begin(), seq.end(), 'T'));
+        return T_count;
+    }
 }
 

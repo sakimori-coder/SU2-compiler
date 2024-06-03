@@ -9,7 +9,7 @@ using namespace SU2_Compiler;
 
 int main(){
     FTYPE eps = 0.0001;
-    quaternion targetU = random_unitary(1234);
+    quaternion targetU = random_unitary();
     cout << targetU << endl;
 
     auto availableU = enum_u_t(targetU, eps, 20, 0, {});

@@ -72,11 +72,16 @@ namespace SU2_Compiler
         return sqrt(1.0 - (tr*tr) / 4.0);
     }
 
-    quaternion random_unitary(size_t seed)
+    std::random_device rd;
+    std::default_random_engine eng(rd());
+    
+    void set_random_unitary_seed(size_t seed)
     {
-        std::random_device rd;
-        std::default_random_engine eng(rd());
-        if(seed != -1) eng.seed(seed);
+        eng.seed(seed);
+    }
+
+    quaternion random_unitary()
+    {
         std::uniform_real_distribution<double> distr(-1.0, 1.0);
         
         FTYPE a = distr(eng);

@@ -59,6 +59,19 @@ namespace SU2_Compiler
         FTYPE s = sqrt(1 - inter.norm()*inter.norm() + mu.norm()*mu.norm()) - v1.dot(inter);
         FTYPE t = -v2.dot(inter);
 
+        Eigen::Matrix<FTYPE, 2, 2> AA;
+        AA << v1.dot(v1), 0,
+              0, v2.dot(v2);
+        Eigen::Matrix<FTYPE, 2, 1> bb;
+        bb = mu;
+        FTYPE cc = inter.dot(inter) - 1;
+        
+        Eigen::Matrix<FTYPE, 2, 2> AA_inv;
+        AA_inv << 1 / v1.dot(v1), 0,
+                  0, 1 / v2.dot(v2);
+        FTYPE cc_prime = cc - bb.dot(AA_inv * bb);
+
+
         Eigen::Matrix<FTYPE, 4, 1> ret_eigen;
         ret_eigen = s*v1 + t*v2 + inter;
         
@@ -188,7 +201,10 @@ namespace SU2_Compiler
                             if(l == i || l == j || l == k) continue;
                             if(distance(inter1, availableU[l]) < eps) flag_in = true;
                         }
-                        if(!flag_in) success = false;
+                        if(!flag_in){
+                            success = false;
+                            // std::cout << "パターン1" << std::endl;
+                        }
                     }
 
                     // if(distance(inter2, U_target) < 2*eps){   // 2ε-ballに含まれる
@@ -202,7 +218,10 @@ namespace SU2_Compiler
                             // cout << eps - distance(inter2, X[l]) << endl; 
                             if(distance(inter2, availableU[l]) < eps) flag_in = true; 
                         }
-                        if(!flag_in) {success = false;}
+                        if(!flag_in){
+                            success = false;
+                            // std::cout << "パターン2" << std::endl;
+                        }
                     }
                 }   // kのループ
 
@@ -216,19 +235,29 @@ namespace SU2_Compiler
                         if(k == i || k == j) continue;
                         if(distance(inter, availableU[k]) < eps) flag_in = true;
                     }
-                    if(!flag_in) {success = false;} 
+                    if(!flag_in){
+                        success = false;
+                        // std::cout << "パターン3" << std::endl;
+                    } 
                 }
             }   // jのループ
             if(!flag_cross_i){
                 quaternion inter = cal_inter_2ball(availableU[i], targetU, eps);
-                if(!inter.is_unitary()) {success = false;}   // 一応書いてるけど、必ず交点は持つはず
+                if(!inter.is_unitary()){
+                    continue;
+                    success = false; 
+                    // std::cout << "パターン4" << std::endl;
+                }   // 一応書いてるけど、必ず交点は持つはず(持たないかも)
 
                 bool flag_in = false;
                 for(int j = 0; j < N; j++){
                     if(j == i) continue;
                     if(distance(inter, availableU[j]) < eps) flag_in = true;
                 }
-                if(!flag_in) {success = false;}
+                if(!flag_in){
+                    success = false; 
+                    // std::cout << "パターン5" << std::endl;
+                }
                 
             }
         }   // iのループ
