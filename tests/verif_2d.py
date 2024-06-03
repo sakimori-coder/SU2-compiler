@@ -41,27 +41,31 @@ ax = plt.axes()
 marker1 = '😁'   # 成功
 marker2 = '😰'   # 失敗
 marker3 = '😐'   # 考え中
-emoji1 = ax.annotate(marker1, (2.5, 2.5),fontsize=50, ha='center',va='center',
+
+emoji1 = ax.annotate(marker1, (2.5, 2.5),fontsize=70, ha='center',va='center',
             xytext=(0,0), textcoords='offset pixels')
-emoji2 = ax.annotate(marker2, (2.5, 2.5),fontsize=50, ha='center',va='center',
+emoji2 = ax.annotate(marker2, (2.5, 2.5),fontsize=70, ha='center',va='center',
             xytext=(0,0), textcoords='offset pixels')
-emoji3 = ax.annotate(marker3, (2.5, 2.5),fontsize=50, ha='center',va='center',
+emoji3 = ax.annotate(marker3, (2.5, 2.5),fontsize=70, ha='center',va='center',
             xytext=(0,0), textcoords='offset pixels')
+
 
 eps = 1
 r_large = 2*eps
-large_ball = patches.Circle(xy=(0, 0), radius=r_large, fc='g')
+r_small = eps
+large_ball = patches.Circle(xy=(0, 0), radius=r_small, fc='g')
 ax.add_patch(large_ball)
 
-random.seed(5)
+# random.seed(1)
 
-n = 20   # 点の数
+n = 4   # 点の数
 
 xy = []
-r_small = eps
+
+r_middle = 1.4*eps
 for i in range(n):
-    x = random.uniform(-r_large, r_large)
-    y = random.uniform(-math.sqrt(r_large**2 - x**2), math.sqrt(r_large**2 - x**2))
+    x = random.uniform(-r_middle, r_middle)
+    y = random.uniform(-math.sqrt(r_middle**2 - x**2), math.sqrt(r_middle**2 - x**2))
     xy.append((x,y))
 
 ball_list = []
@@ -81,6 +85,7 @@ for j in range(n):
     red_balls.append(ball)
 
 animations = []
+emoji2_flag = False
 
 for i in range(n):
     for j in range(i+1,n):
@@ -89,7 +94,7 @@ for i in range(n):
             continue
         A, B = ret
 
-        if distance(A, (0,0)) < r_large:
+        if distance(A, (0,0)) < r_small:
             s1 = ax.scatter(A[0], A[1], color='r')
             animations.append([s1] + ball_list + [emoji3])
             flag = False
@@ -103,9 +108,10 @@ for i in range(n):
                     break
             if not flag: 
                 animations.append([s1] + ball_list + [emoji2])
-                # exit(0)
+                emoji2_flag = True
 
-        if distance(B, (0,0)) < r_large:
+
+        if distance(B, (0,0)) < r_small:
             s2 = ax.scatter(B[0], B[1], color='r')
             animations.append([s2] + ball_list + [emoji3])
             flag = False
@@ -119,48 +125,16 @@ for i in range(n):
                     break
             if not flag: 
                 animations.append([s2] + ball_list + [emoji2])
+                emoji2_flag = True
 
-
-
-for i in range(n):
-    ret = cal_inter(xy[i], (0,0), r_small, r_large)
-    if ret == None:
-        continue
-    A, B = ret
-
-    s1 = ax.scatter(A[0], A[1], color='r')
-    animations.append([s1] + ball_list + [emoji3])
-    flag = False
-    for j in range(n):
-        if j == i:
-            continue
-        if distance(A, xy[j]) < r_small:
-            art = ax.add_artist(red_balls[j])
-            animations.append([art] + ball_list + [s1] + [emoji1])
-            flag = True
-            break
-    if not flag:
-        animations.append([s1] + ball_list + [emoji2])
-
-    s2 = ax.scatter(B[0], B[1], color='r')
-    animations.append([s2] + ball_list + [emoji3])
-    flag = False
-    for j in range(n):
-        if j == i:
-            continue
-        if distance(B, xy[j]) < r_small:
-            art = ax.add_artist(red_balls[j])
-            animations.append([art] + ball_list + [s2] + [emoji1])
-            flag = True
-            break
-    if not flag:
-        animations.append([s2] + ball_list + [emoji2])
-
-    
-
+if not emoji2_flag:
+    emoji2.remove() 
 
 plt.axis('scaled')
 ax.set_aspect('equal')
+ax.set_xlim([-3, 3])
+ax.set_ylim([-3, 3])
 
 ani = animation.ArtistAnimation(fig, animations, interval=500)
-ani.save('algo.gif', writer="imagemagick")
+ani.save('algo.gif', writer="pillow")
+

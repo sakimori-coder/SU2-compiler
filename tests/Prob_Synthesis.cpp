@@ -28,8 +28,8 @@ void test_choi_matrix(){
 
 void test_optimal_prob_unitary(int T_count){
     cout << "Tゲート数 : " << T_count << endl;
-    quaternion targetU = random_unitary(1234);
-    auto [ans, garbage] = optimal_prob_unitary(T_count, targetU, (FTYPE)0);
+    quaternion targetU = random_unitary();
+    auto ans = optimal_prob_unitary(T_count, targetU, (FTYPE)0);
     FTYPE sum = 0;
     for(auto [p, U_ZOmega] : ans){
         string str = ExactSynthesis(U_ZOmega);
@@ -41,12 +41,21 @@ void test_optimal_prob_unitary(int T_count){
 
 
 void test_Prob_Unitary_Synthesis(){
-    FTYPE eps = 0.0001;
-    quaternion targetU = random_unitary(1234);
-    auto ans = Prob_Unitary_Synthesis(targetU, eps);
-    for(auto [p, seq] : ans){
+    // FTYPE eps = 1e-14;
+    // quaternion targetU = random_unitary();
+
+    // worstケース
+    FTYPE eps = 0.01;
+    quaternion targetU(0.71840795897748626715, -0.17374817541848709988, 0.58026607925218396011, 0.34204218056527356802);
+    
+
+    auto mixed_unitary = Prob_Unitary_Synthesis(targetU, eps);
+    for(auto [p, seq] : mixed_unitary){
         cout << p << " " << seq << endl;
     }
+
+    cout << "誤差 " << distance(targetU, mixed_unitary) << endl;
+    cout << "Tカウント " << get_T_count(mixed_unitary) << endl;
 }
 
 
@@ -59,7 +68,7 @@ void test_Random_Unitary_Synthesis(){
     
     quaternion targetU = random_unitary();
 
-    set_targetCJUMB();
+    // set_targetCJUMB();
     auto [value, prob] = get_optimal_prob(availableU, targetU);
     cout << " " << value << endl;
 
@@ -133,6 +142,6 @@ int main(int argc, char *argv[]){
     int T_count = 30;
     if(argc == 2) T_count = stoi(string(argv[1]));
     // test_optimal_prob_unitary(T_count);
-    // test_Prob_Unitary_Synthesis();
-    test_Random_Unitary_Synthesis();
+    test_Prob_Unitary_Synthesis();
+    // test_Random_Unitary_Synthesis();
 }

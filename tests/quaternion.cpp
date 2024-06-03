@@ -7,7 +7,7 @@ using namespace std;
 using namespace SU2_Compiler;
 
 int main(){
-    quaternion U = random_unitary(1234);
+    quaternion U = random_unitary();
 
     cout << U << endl;
 }

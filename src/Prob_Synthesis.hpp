@@ -59,13 +59,15 @@ namespace SU2_Compiler
     /*
     与えらたT_countに対して、
     */
-    std::pair<std::vector< std::pair<FTYPE, U2_ZOmega> >, std::vector<U2_ZOmega>>
-    optimal_prob_unitary(int T_count, quaternion targetU, FTYPE eps, std::vector<U2_ZOmega> pre_availableU_ZOmega = {});
+    std::vector< std::pair<FTYPE, U2_ZOmega> >
+    optimal_prob_unitary(int T_count, quaternion targetU, FTYPE target_eps);
 
     /*
     
     */
     std::vector<std::pair<FTYPE, std::string>> Prob_Unitary_Synthesis(quaternion targetU, FTYPE eps);
+
+    int get_T_count(std::vector<std::pair<FTYPE, std::string>> mixed_unitary);
 
     void set_targetCJUMB();
 }

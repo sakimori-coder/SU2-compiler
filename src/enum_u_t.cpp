@@ -91,7 +91,6 @@ namespace SU2_Compiler
     std::pair< std::vector< U2_ZOmega >, std::array<std::vector< ZRoot2 >, 12> >
     enum_u_t(quaternion U, FTYPE eps, int k, int l, const std::array<std::vector< ZRoot2 >, 12>& pre_results)
     {
-        quaternion U_copy = U;
         quaternion phase(1,0,0,0);
         quaternion sqrt_omega_FTYPE(sqrt_omega.real(), sqrt_omega.imag(), 0, 0);
         for(int i = 0; i < l; i++) phase *= sqrt_omega_FTYPE;
@@ -106,20 +105,21 @@ namespace SU2_Compiler
         FTYPE y0 =-sqrt2k;
         FTYPE y1 = sqrt2k;
 
+        FTYPE eps_prime = sqrt(1 - sqrt(1 - eps*eps)) * sqrt2;
+        if(isnan(eps_prime)) eps_prime = eps;
+        std::vector<ZRoot2> X = one_dim_grid_problem((a-eps_prime)*sqrt2k, (a+eps_prime)*sqrt2k, y0, y1);
+        std::vector<ZRoot2> Y = one_dim_grid_problem((b-eps_prime)*sqrt2k, (b+eps_prime)*sqrt2k, y0, y1);
+        std::vector<ZRoot2> Z = one_dim_grid_problem((c-eps_prime)*sqrt2k, (c+eps_prime)*sqrt2k, y0, y1);
+        std::vector<ZRoot2> W = one_dim_grid_problem((d-eps_prime)*sqrt2k, (d+eps_prime)*sqrt2k, y0, y1);
 
-        // eps *= sqrt2;
-        std::vector<ZRoot2> X = one_dim_grid_problem((a-eps)*sqrt2k, (a+eps)*sqrt2k, y0, y1);
-        std::vector<ZRoot2> Y = one_dim_grid_problem((b-eps)*sqrt2k, (b+eps)*sqrt2k, y0, y1);
-        std::vector<ZRoot2> Z = one_dim_grid_problem((c-eps)*sqrt2k, (c+eps)*sqrt2k, y0, y1);
-        std::vector<ZRoot2> W = one_dim_grid_problem((d-eps)*sqrt2k, (d+eps)*sqrt2k, y0, y1);
 
         y0 += inv_sqrt2;
         y1 += inv_sqrt2;
-        std::vector<ZRoot2> X_omega = one_dim_grid_problem((a - eps)*sqrt2k - inv_sqrt2, (a + eps)*sqrt2k - inv_sqrt2, y0, y1);
-        std::vector<ZRoot2> Y_omega = one_dim_grid_problem((b - eps)*sqrt2k - inv_sqrt2, (b + eps)*sqrt2k - inv_sqrt2, y0, y1);
-        std::vector<ZRoot2> Z_omega = one_dim_grid_problem((c - eps)*sqrt2k - inv_sqrt2, (c + eps)*sqrt2k - inv_sqrt2, y0, y1);
-        std::vector<ZRoot2> W_omega = one_dim_grid_problem((d - eps)*sqrt2k - inv_sqrt2, (d + eps)*sqrt2k - inv_sqrt2, y0, y1);
-        // eps /= sqrt2;
+        std::vector<ZRoot2> X_omega = one_dim_grid_problem((a - eps_prime)*sqrt2k - inv_sqrt2, (a + eps_prime)*sqrt2k - inv_sqrt2, y0, y1);
+        std::vector<ZRoot2> Y_omega = one_dim_grid_problem((b - eps_prime)*sqrt2k - inv_sqrt2, (b + eps_prime)*sqrt2k - inv_sqrt2, y0, y1);
+        std::vector<ZRoot2> Z_omega = one_dim_grid_problem((c - eps_prime)*sqrt2k - inv_sqrt2, (c + eps_prime)*sqrt2k - inv_sqrt2, y0, y1);
+        std::vector<ZRoot2> W_omega = one_dim_grid_problem((d - eps_prime)*sqrt2k - inv_sqrt2, (d + eps_prime)*sqrt2k - inv_sqrt2, y0, y1);
+
 
         const long unsigned int X_size = X.size();
         const long unsigned int Y_size = Y.size();
@@ -259,7 +259,6 @@ namespace SU2_Compiler
             }
         }
 
-
     #pragma omp parallel sections
         {
     #pragma omp section
@@ -360,18 +359,18 @@ namespace SU2_Compiler
         std::vector<U2_ZOmega> ret;
         for(auto ele : solutions_total){
             quaternion V = to_quaternion(ele);
-            
+
             // std::cout << U_copy << std::endl;
             // std::cout << V << std::endl;
 
-            FTYPE d1 = distance(U_copy, V);
+            FTYPE d1 = distance(U, V);
             // std::cout << d1 << std::endl;
             // FTYPE d2 = min(distance_max(U,V), distance_max(U,-V));
             // if(d1 < d2/sqrt2) std::cout << "間違ってる" << std::endl;
 
             // std::cout << d1 << std::endl;
 
-            if(distance(U_copy, V) <= eps){
+            if(distance(U, V) <= eps){
                 // std::string str = Exact_synthesis(u, t, k);
                 // cout << str << endl;
                 // cout << std::count(str.begin(), str.end(), 'T') << endl;
@@ -381,7 +380,11 @@ namespace SU2_Compiler
 
                 // if(cand1.norm() < cand2.norm()) ret.push_back({u, t});
                 // else ret.push_back({-u, -t});
-                ret.push_back(ele);
+
+                bool flag = true;
+                for(auto &U : ret) if(distance(to_quaternion(U), V) < 1e-20) flag = false;   // 同じユニタリは追加しない
+                
+                if(flag)ret.push_back(ele);
             }
         }
 
