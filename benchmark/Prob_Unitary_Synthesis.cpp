@@ -14,8 +14,8 @@ int main(){
     int n = 100;   // n個の平均を求める
     
     vector<FTYPE> eps_vec;
-    FTYPE eps = 0.1;
-    while(eps > 1e-5){
+    FTYPE eps = 1e-10;
+    while(eps > 1e-15){
         eps_vec.push_back(eps);
         eps *= sqrt(0.1);
     }
@@ -41,7 +41,7 @@ int main(){
             cout << "Tカウント " <<  T_count << endl;
         }
         
-        AVE_vec.push_back(AVE / n);
+        AVE_vec.push_back(AVE / (double)n);
         MIN_vec.push_back(MIN);
         MAX_vec.push_back(MAX);
     }

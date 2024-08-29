@@ -33,7 +33,8 @@ namespace SU2_Compiler
             FTYPE n = -ceil(log(y1-y0) / (lambda));
             norm_factor = get_pow_lambda(int(n));
 
-            if(std::abs(int(n)) % 2 == 0){
+            // if(std::abs(int(n)) % 2 == 0){
+            if(int(n)%2 == 0){
                 x0 = pow(lambda,-n) * x0;
                 x1 = pow(lambda,-n) * x1;
                 y0 = pow(lambda, n) * y0;
@@ -52,7 +53,7 @@ namespace SU2_Compiler
         std::vector<ZRoot2> solutions;
 
 
-        FTYPE eps = 1e-10;   // 数値誤差のため
+        FTYPE eps = 1e-20;   // 数値誤差のため
         for(ITYPE b = (ITYPE)ceil((x0-y1) / sqrt8); b <= (ITYPE)floor((x1-y0) / sqrt8); b++){
             for(ITYPE a = (ITYPE)ceil(x0-(FTYPE)b*sqrt2); a <= (ITYPE)floor(x1-(FTYPE)b*sqrt2); a++){
                 ZRoot2 candidate = {a,b};

@@ -1,4 +1,4 @@
-CXXFLAGS = -O3 -fopenmp
+CXXFLAGS = -O3 -fopenmp -I /home/morisaki/SU-2-compiler
 
 
 bench_Prob_Unitary_Synthesis : bench_Prob_Unitary_Synthesis.o eps_net_verification.o Prob_Synthesis.o ExactSynthesis.o enum_u_t.o grid_solver.o U2_ZOmega.o quaternion.o rings.o
@@ -13,11 +13,11 @@ test_Prob_Synthesis : test_Prob_Synthesis.o eps_net_verification.o Prob_Synthesi
 test_Prob_Synthesis.o : tests/Prob_Synthesis.cpp src/Prob_Synthesis.cpp
 	g++ -c $< $(CXXFLAGS) -o $@
 
-# target : test_enum_u_t.o ExactSynthesis.o enum_u_t.o grid_solver.o U2_ZOmega.o quaternion.o rings.o
-# 	g++ $^ $(CXXFLAGS) -ltbb -o tests/enum_u_t
+test_enum_u_t : test_enum_u_t.o ExactSynthesis.o enum_u_t.o grid_solver.o U2_ZOmega.o quaternion.o rings.o
+	g++ $^ $(CXXFLAGS) -ltbb -o tests/enum_u_t
 
-# test_enum_u_t.o : tests/enum_u_t.cpp src/enum_u_t.cpp
-# 	g++ -c $< $(CXXFLAGS) -o $@
+test_enum_u_t.o : tests/enum_u_t.cpp src/enum_u_t.cpp
+	g++ -c $< $(CXXFLAGS) -o $@
 
 Prob_Synthesis.o : src/Prob_Synthesis.cpp
 	g++ -c $< $(CXXFLAGS)

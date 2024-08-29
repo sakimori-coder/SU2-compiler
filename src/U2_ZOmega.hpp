@@ -35,6 +35,7 @@ namespace SU2_Compiler
     U2_ZOmega adjoint(const U2_ZOmega& U);
     void reduction(U2_ZOmega& U);
     quaternion to_quaternion(const U2_ZOmega& U);
+    bool is_equal(const U2_ZOmega& U, const U2_ZOmega& V);
 
     extern ZOmega omega_pow[8];
 }

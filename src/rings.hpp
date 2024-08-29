@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <tbb/concurrent_hash_map.h>
 #include "type.hpp"
 
 namespace SU2_Compiler
@@ -37,7 +38,7 @@ namespace SU2_Compiler
         ZRoot2& operator/=(const ZRoot2& r);
         ZRoot2& operator/=(const ITYPE& r);
         // 単項演算子
-        ZRoot2& operator-();
+        ZRoot2 operator-();
     };
     
     // 算術演算
@@ -117,4 +118,42 @@ namespace SU2_Compiler
     
     inline CTYPE ZOmega_to_FTYPE(const ZOmega& x) { return (FTYPE)x.a*omega3 + (FTYPE)x.b*omega2 + (FTYPE)x.c*omega + (FTYPE)x.d; }
     inline ZOmega conj(ZOmega x) { return {-x.c, -x.b, -x.a, x.d}; }
+
+    struct ZRoot2_hash
+    {
+        
+        std::size_t operator()(const ZRoot2& key) const {
+            // ハッシュ関数を定義（簡単な例）
+            std::size_t seed = std::hash<ITYPE>{}(key.a);
+            return std::hash<ITYPE>{}(key.b) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+        }
+
+        std::size_t hash(const ZRoot2& key) const {
+            // ハッシュ関数を定義（簡単な例）
+            std::size_t seed = std::hash<ITYPE>{}(key.a);
+            return std::hash<ITYPE>{}(key.b) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+        }
+
+        bool equal(const ZRoot2& x, const ZRoot2& y) const{
+            return x == y;
+        }
+    };
+}
+
+
+
+namespace std {
+    template <>
+    struct hash<SU2_Compiler::ZRoot2> {
+        private:
+            const std::hash<SU2_Compiler::ITYPE> ITYPE_hash; 
+
+        public:
+            hash() : ITYPE_hash() {}
+            std::size_t operator()(const SU2_Compiler::ZRoot2& key) const {
+                // ハッシュ関数を定義（簡単な例）
+                std::size_t seed = ITYPE_hash(key.a);
+                return ITYPE_hash(key.b) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+            }
+    };
 }

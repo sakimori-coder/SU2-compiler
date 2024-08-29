@@ -96,6 +96,15 @@ namespace SU2_Compiler
         return ret;
     }
 
+    bool is_equal(const U2_ZOmega& U, const U2_ZOmega& V){
+        if(U.k == V.k && U.l == U.l){
+            if(U.u == V.u && U.t == V.t) return true;
+            else if(-U.u == V.u && U.t == -V.t) return true;
+            else return false;
+        }
+        else return false;
+    }
+
     ZOmega omega_pow[8] = {{0,0,0, 1}, {0,0, 1,0}, {0, 1,0,0},  {1,0,0,0},
                            {0,0,0,-1}, {0,0,-1,0}, {0,-1,0,0}, {-1,0,0,0}};
 }

@@ -36,6 +36,7 @@ namespace SU2_Compiler
         quaternion operator*(const quaternion& r) const;
     };
 
+    
     std::ostream& operator<<(std::ostream& os, const quaternion& U);
     quaternion adjoint(const quaternion& U);
     FTYPE distance(const quaternion& U, const quaternion& V);

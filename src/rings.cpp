@@ -7,7 +7,7 @@ namespace SU2_Compiler{
 /*
     ZRoot2の定義
 */
-    ITYPE ZRoot2::norm() const { return a*a + b*b; }
+    ITYPE ZRoot2::norm() const { return a*a - 2*b*b; }
 
     // 比較演算子
     bool ZRoot2::operator<(const ZRoot2& r) const { return a < r.a || ((a == r.a) && b < r.b); }
@@ -42,8 +42,9 @@ namespace SU2_Compiler{
     }
     ZRoot2& ZRoot2::operator*=(const ZRoot2& r)
     {
+        ITYPE tmp = a;
         a = a * r.a + 2 * b * r.b;
-        b = a * r.b + b * r.a;
+        b = tmp * r.b + b * r.a;
         return *this;
     }
     ZRoot2& ZRoot2::operator*=(const ITYPE& r)
@@ -54,11 +55,9 @@ namespace SU2_Compiler{
     }
 
     // 単項演算子
-    ZRoot2& ZRoot2::operator-()
+    ZRoot2 ZRoot2::operator-()
     {
-        a = -a;
-        b = -b;
-        return *this;
+        return {-a, -b};
     }
     
     // 算術演算子
@@ -82,7 +81,7 @@ namespace SU2_Compiler{
     ZRoot2& ZRoot2::operator/=(const ZRoot2& r)
     {
         ITYPE norm = r.norm();
-        *this *= r;
+        *this *= conj(r);
         *this /= norm;
         return *this;
     }
@@ -90,19 +89,19 @@ namespace SU2_Compiler{
     {
         ZRoot2 ret = l;
         ret /= r;
-        return l;
+        return ret;
     }
     ZRoot2 operator/(const ITYPE& l, const ZRoot2& r)
     {
         ZRoot2 ret = l;
         ret /= r;
-        return l;
+        return ret;
     }
     ZRoot2 operator/(const ZRoot2& l, const ITYPE& r)
     {
         ZRoot2 ret = l;
         ret /= r;
-        return l;
+        return ret;
     }
 
     std::ostream& operator<<(std::ostream& os, const ZRoot2& x)
@@ -248,6 +247,4 @@ namespace SU2_Compiler{
         os << "(" << x.a << ", " << x.b << ", " << x.c << ", " << x.d << ")";
         return os;    
     }
-
-
 }
