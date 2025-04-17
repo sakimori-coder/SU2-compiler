@@ -109,7 +109,8 @@ std::vector<T> sdpa_solver(std::vector<T>& C, vector_4d<T>& F){
     }
 
     input_sdpa_data(C, F, ofs);
-    std::string command_sdpa = "sdpa_gmp " + filename1 + " " + filename2 + " > " + filename3;
+    // std::string command_sdpa = "sdpa_gmp " + filename1 + " " + filename2 + " > " + filename3;
+    std::string command_sdpa = "sdpa_qd " + filename1 + " " + filename2 + " > " + filename3; 
     if(system(command_sdpa.c_str()) == -1){
         std::cout << "SDPコマンドが正常に動作しませんでした" << std::endl;
     }

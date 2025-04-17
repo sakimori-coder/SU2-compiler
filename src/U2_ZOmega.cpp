@@ -97,7 +97,7 @@ namespace SU2_Compiler
     }
 
     bool is_equal(const U2_ZOmega& U, const U2_ZOmega& V){
-        if(U.k == V.k && U.l == U.l){
+        if(U.k == V.k && U.l == V.l){
             if(U.u == V.u && U.t == V.t) return true;
             else if(-U.u == V.u && U.t == -V.t) return true;
             else return false;

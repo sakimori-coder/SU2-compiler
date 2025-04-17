@@ -132,7 +132,7 @@ namespace SU2_Compiler
             for(int i = 0; i < 3; i++){
                 for(int j = 0; j < 3; j++){
                     ITYPE a = A(i,j).a;
-                    ITYPE b = A(i,j).b;
+                    // ITYPE b = A(i,j).b;
                     if(a % 2) return;
                 }
             }
@@ -200,7 +200,7 @@ namespace SU2_Compiler
     {
         Eigen::Matrix3i Ap;
         for(int i = 0; i < 3; i++){
-            for(int j = 0; j < 3; j++) Ap(i,j) = std::abs(A(i,j).a % 2);
+            for(int j = 0; j < 3; j++) Ap(i,j) = std::abs(int(A(i,j).a % 2));
         }
         return Ap;
     }

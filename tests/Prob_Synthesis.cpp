@@ -7,7 +7,6 @@
 #include "src/quaternion.hpp"
 #include "src/U2_ZOmega.hpp"
 #include "src/ExactSynthesis.hpp"
-#include "src/enum_u_t.hpp"
 
 using namespace std;
 using namespace SU2_Compiler;
@@ -49,11 +48,14 @@ void test_Prob_Unitary_Synthesis(){
     // quaternion targetU(0.71840795897748626715, -0.17374817541848709988, 0.58026607925218396011, 0.34204218056527356802);
     
     FTYPE eps = 1e-10;
+    cout << "誤差を入力してください : ";
+    cin >> eps;
     // quaternion targetU = {-0.28878168890538806813, 0.75099433780554028386, -0.48195999604353258835, 0.34688211679284904479};
 
     auto mixed_unitary = Prob_Unitary_Synthesis(targetU, eps);
     for(auto [p, seq] : mixed_unitary){
         cout << p << " " << seq << endl;
+        // cout << count(seq.begin(), seq.end(), 'T') << endl;
     }
 
     cout << "誤差 " << distance(targetU, mixed_unitary) << endl;

@@ -69,6 +69,7 @@ namespace SU2_Compiler{
     ZRoot2 operator-(const ZRoot2& l, const ITYPE& r) { return {l.a - r, l.b}; }
     ZRoot2 operator*(const ZRoot2& l, const ZRoot2& r){ return {l.a*r.a + 2*l.b*r.b, l.a*r.b + l.b*r.a}; }
     ZRoot2 operator*(const ITYPE& l, const ZRoot2& r) { return {l*r.a, l*r.b}; }
+    ZRoot2 operator*(const int& l, const ZRoot2& r) { return {l*r.a, l*r.b}; }
     ZRoot2 operator*(const ZRoot2& l, const ITYPE& r) { return {l.a*r, l.b*r}; }
 
     // 除算

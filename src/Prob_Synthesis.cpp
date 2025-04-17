@@ -4,19 +4,16 @@
 #include <vector>
 #include <utility>
 #include <string>
-#include <unordered_map>
 #include <Eigen/Core>
-#include <tbb/concurrent_hash_map.h>
 
 #include "type.hpp"
 #include "rings.hpp"
 #include "quaternion.hpp"
 #include "U2_ZOmega.hpp"
-#include "enum_u_t.hpp"
 #include "ExactSynthesis.hpp"
 #include "eps_net_verification.hpp"
 #include "sdpa_dd.hpp"
-#include "HashTable.hpp"
+#include "SU2_compiler.cpp"
 
 
 namespace SU2_Compiler
@@ -200,17 +197,13 @@ namespace SU2_Compiler
         FTYPE delta_eps_prime = eps_prime / 5;
 
 
-
-        std::vector<U2_ZOmega> new_availableU_odd, new_availableU_even;
-        std::array<std::vector<ZRoot2>, 12> pre_resluts_odd = {}, pre_resluts_even = {};
-
         while(true){
-            std::tie(new_availableU_odd, pre_resluts_odd) = enum_u_t(targetU, 2.0*eps_prime, k_odd, 1, pre_resluts_odd);
-            std::tie(new_availableU_even, pre_resluts_even) = enum_u_t(targetU, 2.0*eps_prime, k_even, 0, pre_resluts_even);
+            std::vector<U2_ZOmega> availableU_odd = enum_u_t(targetU, 2.0*eps_prime, k_odd, 1);
+            std::vector<U2_ZOmega> availableU_even = enum_u_t(targetU, 2.0*eps_prime, k_even, 0);
             std::vector<quaternion> availableU;
             std::vector<U2_ZOmega> availableU_ZOmega;
 
-            for(auto &U_ZOmega : new_availableU_odd){
+            for(auto &U_ZOmega : availableU_odd){
                 if(get_T_count(U_ZOmega) > T_count) continue;
 
                 quaternion U = to_quaternion(U_ZOmega);
@@ -219,7 +212,7 @@ namespace SU2_Compiler
                 //std::cout << U << std::endl;
             }
 
-            for(auto &U_ZOmega : new_availableU_even){
+            for(auto &U_ZOmega : availableU_even){
                 if(get_T_count(U_ZOmega) > T_count) continue;
 
                 quaternion U = to_quaternion(U_ZOmega);
@@ -230,9 +223,9 @@ namespace SU2_Compiler
 
             FTYPE lower = 1.0;   // availableUで作ることができる確率混合ユニタリの誤差の下限
             for(auto &U : availableU) lower = min(lower, distance(targetU, U) * distance(targetU, U));
-            std::cout << "2eps' " << 2*eps_prime << std::endl;
-            std::cout << "下限 " << lower << std::endl;
-            std::cout << "|X| " << availableU.size() << std::endl;
+            // std::cout << "2eps' " << 2*eps_prime << std::endl;
+            // std::cout << "下限 " << lower << std::endl;
+            // std::cout << "|X| " << availableU.size() << std::endl;
             if(availableU.empty()) return {};
             // if(availableU.size() > 120) std::cout << "|X| " << availableU.size() << std::endl;
             // for(auto U : availableU_ZOmega) std::cout << get_T_count(U) << " " << distance(targetU, to_quaternion(U)) << " " << to_quaternion(U) << std::endl;
@@ -246,121 +239,27 @@ namespace SU2_Compiler
             // for(auto &U : availableU) std::cout << distance(targetU, U) << std::endl;
 
             // 1e-10を足しているのは数値誤差対策
-            if(2*eps_prime >= 1 || check_eps_net(availableU, targetU, eps_prime)){   // 2*eps_prime > 1のときは2ε'近傍がS^3全て
+            // std::cout << availableU.size() << std::endl;
+            // if(eps_prime >= 1 || check_eps_net(availableU, targetU, eps_prime)){   // 2*eps_prime > 1のときは2ε'近傍がS^3全て
+            if(2*eps_prime >= 0.99999 || availableU.size() >= 50){
+                // std::cout << "bbb" << std::endl;
                 auto [opt_dist, prob] = get_optimal_prob(availableU, targetU);
+                // std::cout << "ccc" << std::endl;
                 if(opt_dist > target_eps) return {};   // 最適な確率混合で目的誤差を達成できてないときは空を返す
 
                 std::vector<std::pair<FTYPE, U2_ZOmega>> ret;
                 for(int i = 0; i < prob.size(); i++){
-                    if(prob[i] > 1e-20) ret.push_back({prob[i], availableU_ZOmega[i]});
+                    if(prob[i] > 1e-15) ret.push_back({prob[i], availableU_ZOmega[i]});
                 }
                 return ret;
             }
 
             eps_prime += delta_eps_prime;
+            eps_prime = min(eps_prime, (FTYPE)0.5);
+            // std::cout << eps_prime << std::endl;
         }
 
     }
-
-    
-
-    // 与えられたTカウント以下で作れる最適な確率混合ユニタリを求める。もし、下限が目的のepsよりも大きい場合は計算を行わない。(本当は奇数・偶数で前の結果を再利用できるが、可読性が著しく悪いので行わない)
-    std::vector< std::pair<FTYPE, U2_ZOmega>>
-    optimal_prob_unitary_use_hash(int T_count, quaternion targetU, FTYPE target_eps)
-    {
-        int k_odd, k_even;
-        if(T_count % 2){
-            k_odd = (T_count + 3) / 2;
-            k_even = (T_count + 1) / 2;
-        }else{
-            k_odd = (T_count + 2) / 2;
-            k_even = (T_count + 2) / 2;
-        }
-
-        // FTYPE eps_prime = pow(2.0, -(FTYPE)T_count / 3.0) / 2.0, sqrt(target_eps) / 2;   // T_count = 3log_2(1/2eps')をeps'について解いた
-        FTYPE eps_prime = sqrt(target_eps) / 2;
-        FTYPE eps_prime_pre = 0;
-        FTYPE delta_eps_prime = (pow(2.0, -(FTYPE)T_count / 3.0) / 2.0) / 5;
-
-
-        std::vector<U2_ZOmega> new_availableU_odd, new_availableU_even;
-        std::vector<ZRoot2> XY_odd, ZW_odd, XY_even, ZW_even;
-
-        std::vector<quaternion> availableU;
-        std::vector<U2_ZOmega> availableU_ZOmega;
-        std::vector<U2_ZOmega> candidateU_ZOmega_odd, candidateU_ZOmega_even;
-
-        bool first_flag = true;
-        while(true){
-            new_availableU_odd = enum_u_t(targetU, 2*eps_prime, 2*eps_prime_pre, k_odd, 1, XY_odd, ZW_odd, candidateU_ZOmega_odd);
-            new_availableU_even = enum_u_t(targetU, 2*eps_prime, 2*eps_prime_pre, k_even, 0, XY_even, ZW_even, candidateU_ZOmega_even);
-
-            int cnt = 0;
-            for(auto &U_ZOmega : new_availableU_odd){
-                if(get_T_count(U_ZOmega) > T_count) continue;
-
-                quaternion U = to_quaternion(U_ZOmega);
-                availableU.push_back(U);
-                availableU_ZOmega.push_back(U_ZOmega);
-                //std::cout << U << std::endl;
-                cnt++;
-            }
-            std::cout << "奇数 " << cnt << std::endl;
-
-            cnt = 0;
-            for(auto &U_ZOmega : new_availableU_even){
-                if(get_T_count(U_ZOmega) > T_count) continue;
-
-                quaternion U = to_quaternion(U_ZOmega);
-                availableU.push_back(U);
-                availableU_ZOmega.push_back(U_ZOmega);
-                // std::cout << U << std::endl;
-                cnt++;
-            }
-            std::cout << "偶数 " << cnt << std::endl;
-
-            FTYPE lower = 1.0;   // availableUで作ることができる確率混合ユニタリの誤差の下限
-            for(auto &U : availableU) lower = min(lower, distance(targetU, U) * distance(targetU, U));
-            std::cout << "2eps' " << 2*eps_prime << std::endl;
-            std::cout << "eps delta " << delta_eps_prime << std::endl;
-            std::cout << "下限 " << lower << std::endl;
-            std::cout << "|X| " << availableU.size() << std::endl;
-            if(availableU.empty()) return {};
-
-            // if(availableU.size() > 120) std::cout << "|X| " << availableU.size() << std::endl;
-            // for(auto U : availableU_ZOmega) std::cout << get_T_count(U) << " " << distance(targetU, to_quaternion(U)) << " " << to_quaternion(U) << std::endl;
-            // FTYPE min_dist = 1.0;
-            // for(int i = 0; i < availableU.size(); i++) for(int j = i+1; j < availableU.size(); j++) min_dist = min(min_dist, distance(availableU[i], availableU[j]));
-            // std::cout << "min_dist " << min_dist << std::endl;
-
-            if(target_eps < lower && !availableU.empty()) return {};   // 下限未満のときは、目的誤差は達成不可能なのでここで計算をやめる
-
-            // std::cout << "eps_prime " << eps_prime << std::endl;
-            // for(auto &U : availableU) std::cout << distance(targetU, U) << std::endl;
-
-            // 1e-10を足しているのは数値誤差対策
-            if(2*eps_prime >= 1 || check_eps_net(availableU, targetU, eps_prime)){   // 2*eps_prime > 1のときは2ε'近傍がS^3全て
-                auto [opt_dist, prob] = get_optimal_prob(availableU, targetU);
-                if(opt_dist > target_eps) return {};   // 最適な確率混合で目的誤差を達成できてないときは空を返す
-
-                std::vector<std::pair<FTYPE, U2_ZOmega>> ret;
-                for(int i = 0; i < prob.size(); i++){
-                    if(prob[i] > 1e-20) ret.push_back({prob[i], availableU_ZOmega[i]});
-                }
-                return ret;
-            }
-
-            eps_prime_pre = eps_prime;
-            if(first_flag){
-                eps_prime = pow(2.0, -(FTYPE)T_count / 3.0) / 2.0;
-                first_flag = false;
-            }
-            eps_prime += delta_eps_prime;
-            
-        }
-
-    }
-
 
 
 
@@ -369,11 +268,11 @@ namespace SU2_Compiler
     {
         int MAX_T_count = 100;
         for(int T_count = 0; T_count < MAX_T_count; T_count++){
-            std::cout << std::endl;
-            std::cout << "Tカウント " << T_count << std::endl;
-            std::cout << std::endl;
+            // std::cout << std::endl;
+            // std::cout << "Tカウント " << T_count << std::endl;
+            // std::cout << std::endl;
             // auto optimal_mixed_unitary = optimal_prob_unitary(T_count, targetU, eps);
-            auto optimal_mixed_unitary = optimal_prob_unitary_use_hash(T_count, targetU, eps);
+            auto optimal_mixed_unitary = optimal_prob_unitary(T_count, targetU, eps);
             if(!optimal_mixed_unitary.empty()){
                 std::vector<std::pair<FTYPE, std::string>> ret;
                 for(auto& [p, U] : optimal_mixed_unitary) ret.push_back({p, ExactSynthesis(U)});

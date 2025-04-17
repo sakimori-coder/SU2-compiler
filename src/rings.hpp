@@ -1,7 +1,6 @@
 #pragma once
 
 #include <iostream>
-#include <tbb/concurrent_hash_map.h>
 #include "type.hpp"
 
 namespace SU2_Compiler
@@ -18,6 +17,7 @@ namespace SU2_Compiler
         ZRoot2() : a(0), b(0) {}
         ZRoot2(ITYPE a, ITYPE b) : a(a), b(b) {}
         ZRoot2(ITYPE a) : a(a), b(0) {}
+        ZRoot2(int a) : a(a), b(0) {}
 
         ITYPE norm() const;
     
@@ -50,6 +50,7 @@ namespace SU2_Compiler
     ZRoot2 operator-(const ZRoot2& l, const ITYPE& r);
     ZRoot2 operator*(const ZRoot2& l, const ZRoot2& r);
     ZRoot2 operator*(const ITYPE& l, const ZRoot2& r);
+    ZRoot2 operator*(const int& l, const ZRoot2& r);
     ZRoot2 operator*(const ZRoot2& l, const ITYPE& r);
     ZRoot2 operator/(const ZRoot2& l, const ZRoot2& r);
     ZRoot2 operator/(const ITYPE& l, const ZRoot2& r);

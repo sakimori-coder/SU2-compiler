@@ -9,7 +9,7 @@
 
 namespace SU2_Compiler
 {
-    ZRoot2 get_pow_lambda(int n){
+    ZRoot2 pow_lambda(int n){
         ZRoot2 ans = {1,0};
         ZRoot2 x = {1,1};   // nが正ならλ, 負ならλ^-1
         if(n < 0){
@@ -31,7 +31,7 @@ namespace SU2_Compiler
         ZRoot2 norm_factor = {1,0};
         if(x1-x0 > 1 || y1-y0 > 1){
             FTYPE n = -ceil(log(y1-y0) / (lambda));
-            norm_factor = get_pow_lambda(int(n));
+            norm_factor = pow_lambda(int(n));
 
             // if(std::abs(int(n)) % 2 == 0){
             if(int(n)%2 == 0){
@@ -51,7 +51,6 @@ namespace SU2_Compiler
         FTYPE sqrt2 = sqrt((FTYPE)2.0);
         FTYPE sqrt8 = (FTYPE)2.0 * sqrt2;
         std::vector<ZRoot2> solutions;
-
 
         FTYPE eps = 1e-20;   // 数値誤差のため
         for(ITYPE b = (ITYPE)ceil((x0-y1) / sqrt8); b <= (ITYPE)floor((x1-y0) / sqrt8); b++){
