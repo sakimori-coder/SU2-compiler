@@ -1,76 +1,82 @@
-CXXFLAGS = -O3 -fopenmp -I /home/morisaki/SU-2-compiler -lquadmath
+# ────────────────────────────────────────────
+# ディレクトリ定義
+SRCDIR := src
+INCDIR := include
+OBJDIR := obj
+BINDIR := bin
+TESTDIR := tests
 
 
-# SU2_compiler_MPIのテストのbuild
-test_SU2_compiler_MPI : test_SU2_compiler_MPI.o rings.o U2_ZOmega.o quaternion.o grid_solver.o ExactSynthesis.o
-	/opt/intel/compilers_and_libraries_2020.4.304/linux/mpi/intel64/bin/mpicxx $^ $(CXXFLAGS) -o tests/SU2_compiler_MPI
+# ────────────────────────────────────────────
+# ソース・オブジェクト一覧
+SRCS := $(shell find $(SRCDIR) -name '*.cpp')
+OBJS := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
 
-test_SU2_compiler_MPI.o : tests/SU2_compiler_MPI.cpp src/SU2_compiler_MPI.cpp
-	/opt/intel/compilers_and_libraries_2020.4.304/linux/mpi/intel64/bin/mpicxx -c $< $(CXXFLAGS) -o $@
+TEST_SRCS  := $(shell find $(TESTDIR) -name '*.cpp')
+TEST_OBJS  := $(patsubst $(TESTDIR)/%.cpp,$(OBJDIR)/tests/%.o,$(TEST_SRCS))
 
+DEPS := $(OBJS:.o=.d)
 
-# ユニモジュラー行列のテストのbuild
-test_Unimodular : test_Unimodular.o quaternion.o
-	g++ $^ $(CXXFLAGS) -o tests/Unimodular
-
-test_Unimodular.o : tests/Unimodular_Z.cpp src/type.hpp src/quaternion.hpp src/Unimodular_Z.hpp
-	g++ -c $< $(CXXFLAGS) -o $@
-
-probabilistic_bench : benchmark/probabilistic.cpp eps_net_verification.o Prob_Synthesis.o ExactSynthesis.o grid_solver.o U2_ZOmega.o quaternion.o rings.o
-	g++ $^ $(CXXFLAGS) -o benchmark/probabilistic
+print-%: ; @echo $* = $($*)
 
 
-# benchのテストのbuild
-deterministic_bench : benchmark/deterministic.cpp rings.o U2_ZOmega.o quaternion.o grid_solver.o ExactSynthesis.o
-	g++ $^ $(CXXFLAGS) -o benchmark/deterministic
+# ────────────────────────────────────────────
+# コンパイラ設定
+CXX = g++
+CXXFLAGS = -std=c++20 -O3 -fopenmp -I$(INCDIR) -lquadmath
+CXXFLAGS += -MMD -MP
+
+LDLIBS_TEST := -lgtest -lgtest_main -pthread
+
+# PROFILE_FLAGS = -O2 -g -fno-omit-frame-pointer -fno-inline
+# CXXFLAGS += $(PROFILE_FLAGS)
+
+
+# ────────────────────────────────────────────
+# obj/ と bin/ の作成
+$(OBJDIR):
+	mkdir -p $@
+
+$(OBJDIR)/ring:
+	mkdir -p $@
+
+$(BINDIR):
+	mkdir -p $@
+
+
+# ────────────────────────────────────────────
+# ソース → オブジェクト（同時に .d も生成）
+# $< が src/xxx.cpp, $@ が obj/xxx.o
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+
+$(OBJDIR)/tests/%.o: $(TESTDIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 
 
-test_Prob_Synthesis : test_Prob_Synthesis.o eps_net_verification.o Prob_Synthesis.o ExactSynthesis.o grid_solver.o U2_ZOmega.o quaternion.o rings.o
-	g++ $^ $(CXXFLAGS) -o tests/Prob_Synthesis
+$(BINDIR)/test_runner: $(OBJS) $(TEST_OBJS)
+	@mkdir -p $(BINDIR)
+	$(CXX) $^ $(CXXFLAGS) $(LDLIBS_TEST) -o $@
 
-test_Prob_Synthesis.o : tests/Prob_Synthesis.cpp src/Prob_Synthesis.cpp src/SU2_compiler.cpp
-	g++ -c $< $(CXXFLAGS) -o $@
-
-Prob_Synthesis.o : src/Prob_Synthesis.cpp src/Prob_Synthesis.hpp src/type.hpp src/rings.hpp src/quaternion.hpp src/U2_ZOmega.hpp src/ExactSynthesis.hpp src/eps_net_verification.hpp src/sdpa_dd.hpp src/SU2_compiler.hpp
-	g++ $(CXXFLAGS) -c $< -o $@
-
-eps_net_verification.o : src/eps_net_verification.cpp src/eps_net_verification.hpp src/type.hpp src/quaternion.hpp src/linalg.hpp
-	g++ $(CXXFLAGS) -c $< -o $@
+.PHONY: test
+test: $(BINDIR)/test_runner
+	@echo "Running tests…"; ./$(BINDIR)/test_runner
 
 
 
+# ────────────────────────────────────────────
+# 依存関係ファイルを読み込む
+# 存在しなくてもエラーにしない include なので、初回ビルドでも OK
+-include $(DEPS)
 
 
+# ────────────────────────────────────────────
+# クリーン
+clean:
+	rm -rf $(OBJDIR) $(BINDIR)
 
-# SU2_compilerのテストのbuild
-test_SU2_compiler : test_SU2_compiler.o rings.o U2_ZOmega.o quaternion.o ExactSynthesis.o SU2_compiler.o ExactSynthesis.o
-	g++ $^ $(CXXFLAGS) -o tests/SU2_compiler
-
-test_SU2_compiler.o : tests/SU2_compiler.cpp src/SU2_compiler.hpp src/type.hpp src/quaternion.hpp src/ExactSynthesis.hpp
-	g++ -c $< $(CXXFLAGS) -o $@
-
-SU2_compiler.o : src/SU2_compiler.cpp src/type.hpp src/quaternion.hpp src/rings.hpp src/U2_ZOmega.hpp src/Unimodular_Z.hpp src/ExactSynthesis.hpp
-	g++ -c $< $(CXXFLAGS) -o $@
-
-ExactSynthesis.o : src/ExactSynthesis.cpp src/ExactSynthesis.hpp src/U2_ZOmega.hpp
-	g++ $(CXXFLAGS) -c $< -o $@
-
-grid_solver.o : src/grid_solver.cpp src/grid_solver.hpp src/type.hpp src/rings.hpp
-	g++ $(CXXFLAGS) -c $< -o $@
-
-U2_ZOmega.o : src/U2_ZOmega.cpp src/U2_ZOmega.hpp src/type.hpp src/rings.hpp src/quaternion.hpp
-	g++ $(CXXFLAGS) -c $< -o $@
-
-rings.o : src/rings.cpp src/rings.hpp src/type.hpp
-	g++ $(CXXFLAGS) -c $< -o $@
-
-quaternion.o : src/quaternion.cpp src/quaternion.hpp src/type.hpp
-	g++ $(CXXFLAGS) -c $< -o $@
-
-
-clean : 
-	rm quaternion.o rings.o U2_ZOmega.o grid_solver.o \
-	   enum_u_t.o ExactSynthesis.o eps_net_verification.o \
-	   Prob_Synthesis.o \
-	   SU2_compiler.o
+.PHONY: all clean

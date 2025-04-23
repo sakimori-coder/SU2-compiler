@@ -1,2 +1,0 @@
-Unimodular.cppのテスト
-g++ tests/Unimodular.cpp src/rings.cpp src/quaternion.cpp src/grid_solver.cpp -I /home/morisaki/SU-2-compiler -o tests/Unimodular -lquadmath
