@@ -78,7 +78,7 @@ std::ostream& operator<<(std::ostream& os, const SU2& U)
 
 Real distance(const SU2& U, const SU2& V)
 {
-    SU2 UV_dag = U * adjoint(V);
+    SU2 UV_dag = U * V.adjoint();
     Real tr = UV_dag.trace();
     return sqrt(1.0 - (tr*tr) / 4.0);
 }
