@@ -56,10 +56,10 @@ std::tuple<MatrixXI, MatrixXI> LLL(MatrixXR B, Real delta)
         for(int j = k-1; j >= 0; j--){
             if(abs(mu(k,j)) > 0.5){
                 Integer q = (Integer)round(mu(k,j));
-                B.col(k) -= q * B.col(j);
+                B.col(k) -= Real(q) * B.col(j);
                 U.col(k) -= q * U.col(j);
                 U_inv.row(j) += q * U_inv.row(k);
-                for(int l = 0; l <= j; l++) mu(k,l) -= q * mu(j,l);
+                for(int l = 0; l <= j; l++) mu(k,l) -= Real(q) * mu(j,l);
             }
         }
     
@@ -201,7 +201,7 @@ std::vector<VectorXI> EnumIntegerPoints(MatrixXR Q, VectorXR p, Real c)
     }
     end = std::chrono::system_clock::now();
     time = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0);
-    std::cout << "LLL : " << time << "[ms]" << std::endl;
+    // std::cout << "LLL : " << time << "[ms]" << std::endl;
 
     std::function<std::vector<VectorXI>(int, VectorXR, Real)> _EnumIntegerPoints;
     _EnumIntegerPoints = [&_EnumIntegerPoints, &Q_list, &Q_inv_list, &U_list, &U_inv_list, &A_invb_list]
@@ -239,12 +239,12 @@ std::vector<VectorXI> EnumIntegerPoints(MatrixXR Q, VectorXR p, Real c)
                 VectorXI xvec(N);
                 xvec(0) = x0;
                 
-                VectorXR b = (x0 - p(0)) * Q.col(0).tail(N-1);
+                VectorXR b = (Real(x0) - p(0)) * Q.col(0).tail(N-1);
                 Real next_c = c;
                 MatrixXR next_p = p.tail(N-1);
-                next_p -= (x0 - p(0)) * A_invb;
-                next_c -= Q(0,0) * (x0 - p(0)) * (x0 - p(0));
-                next_c += b.dot((x0 - p(0)) * A_invb);
+                next_p -= (Real(x0) - p(0)) * A_invb;
+                next_c -= Q(0,0) * (Real(x0) - p(0)) * (Real(x0) - p(0));
+                next_c += b.dot((Real(x0) - p(0)) * A_invb);
                 auto X_tail = _EnumIntegerPoints(N-1, next_p, next_c);
                 for(auto xvec_tail : X_tail){
                     xvec.tail(N-1) = xvec_tail;
@@ -260,7 +260,7 @@ std::vector<VectorXI> EnumIntegerPoints(MatrixXR Q, VectorXR p, Real c)
     auto ret = _EnumIntegerPoints(N, p, c);
     end = std::chrono::system_clock::now();
     time = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0);
-    std::cout << "Enum : " << time << "[ms]" << std::endl;
+    // std::cout << "Enum : " << time << "[ms]" << std::endl;
     
     return ret;
 }

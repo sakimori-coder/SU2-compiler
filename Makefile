@@ -2,9 +2,11 @@
 # ディレクトリ定義
 SRCDIR := src
 INCDIR := include
-OBJDIR := obj
-BINDIR := bin
 TESTDIR := tests
+BUILDDIR := build
+OBJDIR := $(BUILDDIR)/obj
+LIBDIR := $(BUILDDIR)/lib
+TEST_BIN := $(BUILDDIR)/test_runner
 
 
 # ────────────────────────────────────────────
@@ -15,7 +17,7 @@ OBJS := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
 TEST_SRCS  := $(shell find $(TESTDIR) -name '*.cpp')
 TEST_OBJS  := $(patsubst $(TESTDIR)/%.cpp,$(OBJDIR)/tests/%.o,$(TEST_SRCS))
 
-DEPS := $(OBJS:.o=.d)
+DEPS := $(OBJS:.o=.d) $(TEST_OBJS:.o=.d)
 
 print-%: ; @echo $* = $($*)
 
@@ -23,24 +25,27 @@ print-%: ; @echo $* = $($*)
 # ────────────────────────────────────────────
 # コンパイラ設定
 CXX = g++
-CXXFLAGS = -std=c++20 -O3 -fopenmp -I$(INCDIR) -lquadmath
+CXXFLAGS = -std=c++20 -O3 -fopenmp -I$(INCDIR) -Iextern/boost -Iextern/eigen
 CXXFLAGS += -MMD -MP
+CXXFLAGS += -fdiagnostics-show-template-tree
+CXXFLAGS += -fno-elide-type
+LDFLAGS := -fopenmp
+LDLIBS := -pthread -lquadmath
 
-LDLIBS_TEST := -lgtest -lgtest_main -pthread
+GTEST_INC := -Iextern/googletest/googletest -Iextern/googletest/googletest/include
+GTEST_LIB := $(LIBDIR)/libgtest.a
+GTEST_MAIN:= $(LIBDIR)/libgtest_main.a
 
 # PROFILE_FLAGS = -O2 -g -fno-omit-frame-pointer -fno-inline
 # CXXFLAGS += $(PROFILE_FLAGS)
 
 
 # ────────────────────────────────────────────
-# obj/ と bin/ の作成
+# buildの作成
+$(BUILDDIR):
+	mkdir $@
+
 $(OBJDIR):
-	mkdir -p $@
-
-$(OBJDIR)/ring:
-	mkdir -p $@
-
-$(BINDIR):
 	mkdir -p $@
 
 
@@ -54,18 +59,32 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
 
 $(OBJDIR)/tests/%.o: $(TESTDIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(GTEST_INC) -c $< -o $@
 
 
 
-$(BINDIR)/test_runner: $(OBJS) $(TEST_OBJS)
-	@mkdir -p $(BINDIR)
-	$(CXX) $^ $(CXXFLAGS) $(LDLIBS_TEST) -o $@
+$(TEST_BIN): $(TEST_OBJS) $(GTEST_LIB) $(GTEST_MAIN) $(OBJS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 .PHONY: test
-test: $(BINDIR)/test_runner
-	@echo "Running tests…"; ./$(BINDIR)/test_runner
+test: $(TEST_BIN)
+	@echo "Running tests…"; ./$(TEST_BIN)
 
+
+# ────────────────────────────────────────────
+# GoogleTest ライブラリ
+GTEST_SRCDIR := extern/googletest/googletest/src
+
+$(GTEST_LIB): $(GTEST_SRCDIR)/gtest-all.cc
+	@mkdir -p $(LIBDIR)
+	$(CXX) $(CXXFLAGS) $(GTEST_INC) -c $< -o $(OBJDIR)/gtest-all.o
+	ar rcs $@ $(OBJDIR)/gtest-all.o
+
+$(GTEST_MAIN): $(GTEST_SRCDIR)/gtest_main.cc
+	@mkdir -p $(LIBDIR)
+	$(CXX) $(CXXFLAGS) $(GTEST_INC) -c $< -o $(OBJDIR)/gtest_main.o
+	ar rcs $@ $(OBJDIR)/gtest_main.o
 
 
 # ────────────────────────────────────────────

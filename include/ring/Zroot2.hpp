@@ -32,6 +32,7 @@ struct Zroot2
     Integer b = 0;
     
     constexpr Zroot2() noexcept = default;
+    constexpr Zroot2(int _a) noexcept : a(_a), b(0) {}
     constexpr Zroot2(Integer _a) noexcept : a(_a), b(0) {}
     constexpr Zroot2(Integer _a, Integer _b) noexcept : a(_a), b(_b) {}
     

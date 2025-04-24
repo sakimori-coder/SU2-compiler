@@ -87,6 +87,8 @@
         "span": "cpp",
         "stop_token": "cpp",
         "syncstream": "cpp",
-        "core": "cpp"
+        "core": "cpp",
+        "alignedvector3": "cpp",
+        "*.ipp": "cpp"
     }
 }

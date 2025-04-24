@@ -95,6 +95,11 @@ struct Zzeta8j
     Zzeta8j& operator/=(const Zzeta8& r);
 
     auto operator<=>(const Zzeta8j&) const = default;
+    bool operator<(const Zzeta8j& r) const {
+        if(u == r.u) return t < r.t;
+        return u < r.u;
+    }
+    bool operator==(const Zzeta8j& r) const { return u == r.u && t == r.t; }
 };
 
 //------------------------------------------------------------------------

@@ -29,8 +29,9 @@ struct SU2
     Real c;
     Real d;
 
-    SU2() : a(1), b(0), c(0), d(0) {};
-    SU2(Real _a, Real _b, Real _c, Real _d) : a(_a), b(_b), c(_c), d(_d) {};
+    SU2() : a(1), b(0), c(0), d(0) {}
+    SU2(Real _a, Real _b, Real _c, Real _d) : a(_a), b(_b), c(_c), d(_d) {}
+    SU2(Complex u, Complex t) : a(u.real()), b(u.imag()), c(t.real()), d(t.imag()) {}
     
     SU2 adjoint() const { return {a, -b, -c, -d}; }
     inline Real determinant() const { return a*a + b*b + c*c + d*d; }

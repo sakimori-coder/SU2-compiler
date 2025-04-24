@@ -47,6 +47,7 @@ struct Zzeta8
     //------------------------------------------------------------------------
     //  constructor
     constexpr Zzeta8() noexcept = default;
+    constexpr explicit Zzeta8(int _a) noexcept : a(_a), b(0), c(0), d(0) {}
     constexpr explicit Zzeta8(Integer _a) noexcept : a(_a), b(0), c(0), d(0) {}
     constexpr explicit Zzeta8(Zroot2 r) noexcept : a(r.a), b(r.b), c(0), d(-r.b) {}
     constexpr Zzeta8(Integer _a, Integer _b, Integer _c, Integer _d) noexcept : a(_a), b(_b), c(_c), d(_d) {}
@@ -98,6 +99,9 @@ struct Zzeta8
     constexpr Zzeta8 operator-() const noexcept { return {-a,-b,-c,-d}; }
 
     auto operator<=>(const Zzeta8&) const = default;
+    bool operator<(const Zzeta8& r) const {
+        return std::tie(a,b,c,d) < std::tie(r.a,r.b,r.c,r.d);
+    }
 };
 
 //------------------------------------------------------------------------
