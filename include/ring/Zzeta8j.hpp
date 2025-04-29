@@ -73,6 +73,11 @@ struct Zzeta8j
 
     [[nodiscard]] Matrix2C to_Matrix2C() const;
 
+    [[nodiscard]] Zzeta8j mod2() const {
+        return {u.a & 1, u.b & 1, u.c & 1, u.d & 1,
+                t.a & 1, t.b & 1, t.c & 1, t.d & 1};
+    }
+
     [[nodiscard]] bool divisible(const Integer& r) const;
     [[nodiscard]] bool divisible(const Zroot2& r) const;
     [[nodiscard]] bool divisible(const Zzeta8& r) const;

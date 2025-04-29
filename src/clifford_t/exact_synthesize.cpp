@@ -214,6 +214,7 @@ std::string exact_synthesize(SO3Droot2 U) {
             for(int j = 0; j < 3; j++) P(i,j) = ((U.mat(i,j).a & 1) != 0);
         }
 
+
         if(P(2,0) == 0 && P(2,1) == 0 && P(2,2) == 0){
             sequence += "T";
 			U = Tinv_SO3 * U;
