@@ -11,8 +11,8 @@
 using namespace::su2_compiler;
 
 TEST(Snthesize, random) {
-    SU2 V = su2_compiler::random_unitary(123);
-    Real eps = 1e-7;
+    SU2 V = su2_compiler::random_unitary();
+    Real eps = 1e-12;
 
     std::string sequence = clifford_t::synthesize(V, eps);
 

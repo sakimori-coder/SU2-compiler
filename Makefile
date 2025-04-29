@@ -25,7 +25,7 @@ print-%: ; @echo $* = $($*)
 # ────────────────────────────────────────────
 # コンパイラ設定
 CXX = g++
-CXXFLAGS = -std=c++20 -O3 -fopenmp -I$(INCDIR) -Iextern/boost -Iextern/eigen
+CXXFLAGS = -std=c++20 -O3 -fopenmp -Iextern/boost -Iextern/eigen -I$(INCDIR) 
 CXXFLAGS += -MMD -MP
 CXXFLAGS += -fdiagnostics-show-template-tree
 CXXFLAGS += -fno-elide-type

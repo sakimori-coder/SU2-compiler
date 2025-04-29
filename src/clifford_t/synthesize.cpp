@@ -17,61 +17,42 @@
 namespace su2_compiler {
 namespace clifford_t {
 
-// std::string synthesize(SU2 V, Real eps) {
-//     SU2 V_prime = V * SU2(ZETA16, Complex(0.0, 0.0));
-
-//     int k = 0;
-//     while(true) {
-//         std::cout << "k=" << k << std::endl;
-//         // std::cout << "start" << std::endl;
-//         auto U_even_list = solve_approx_synthesis(V, eps, k);
-//         // std::cout << "end" << std::endl;
-//         auto U_odd_list = solve_approx_synthesis(V_prime, eps, k);
-
-//         std::vector<U2Dzeta8> U_list;
-//         for(auto U_even : U_even_list) U_list.push_back(U2Dzeta8(U_even, 0, k));
-//         for(auto U_odd : U_odd_list) U_list.push_back(U2Dzeta8(U_odd, 1, k));
-
-//         if(!U_list.empty()) {
-//             U2Dzeta8 U = *std::min_element(U_list.begin(), U_list.end(), [](auto a, auto b) {
-//                 return get_Tcount(a) < get_Tcount(b);
-//             });
-//             return exact_synthesize(U);
-//         }
-//         k++;
-//     }
-// }
-
-
 
 std::string synthesize(SU2 V, Real eps) {
     SU2 V_prime = V * SU2(ZETA16, Complex(0.0, 0.0));
 
-    int t = 63;
+    int t = 0;
     while(true) {
         std::cout << "t=" << t << std::endl;
-        int t_prime = 0;
+        int t_prime = std::max(0, int(round(Real(t) + 5.0/2.0*log2(eps))));
+        // t_prime = 0;
+        std::cout << "t'=" << t_prime << std::endl;
         
         std::vector<std::string> CT_sequence;
         for(UINT mask = 0; mask < (UINT(1)<<t_prime); mask++) {
             std::string sequence = "";
             for(int j = 0; j < t_prime; j++) {
                 if(mask & (UINT(1)<<j)) sequence += "HT";
-                else sequence += "SHT";
+                else                    sequence += "SHT";
             }
             CT_sequence.push_back(sequence);
         }
-
-        for(UINT mask = 0; mask < (UINT(1)<<(t_prime-1)); mask++) {
-            std::string sequence = "";
-            for(int j = 0; j < t_prime-1; j++) {
-                if(mask & (UINT(1)<<j)) sequence += "HT";
-                else sequence += "SHT";
-            }
-            CT_sequence.push_back("T" + sequence);
-        }
         
+        if(t_prime - 1 >= 0){
+            for(UINT mask = 0; mask < (UINT(1)<<std::max(0, t_prime-1)); mask++) {
+                std::string sequence = "";
+                for(int j = 0; j < t_prime-1; j++) {
+                    if(mask & (UINT(1)<<j)) sequence += "HT";
+                    else                    sequence += "SHT";
+                }
+                CT_sequence.push_back("T" + sequence);
+            }
+        }
 
+        
+        std::cout << CT_sequence.size() << std::endl;
+        std::vector<U2Dzeta8> U_list;
+#pragma omp parallel for
         for(auto sequence : CT_sequence) {
             U2Dzeta8 U_prime(sequence);
 
@@ -83,49 +64,28 @@ std::string synthesize(SU2 V, Real eps) {
             std::chrono::system_clock::time_point start, end;
             double time;
             start = std::chrono::system_clock::now();
-            auto U_even_list = solve_approx_synthesis(U_prime.adjoint().to_SU2() * V, eps, k_even);
-            auto U_odd_list = solve_approx_synthesis(U_prime.adjoint().to_SU2() * V_prime, eps, k_odd);
+            if((t - t_prime) % 2 == 0) {
+                int k_even = (t - t_prime + 3) / 2;
+                auto U_even_list = solve_approx_synthesis(U_prime.adjoint().to_SU2() * V, eps, k_even);
+#pragma omp critical
+                for(auto U_even : U_even_list) U_list.push_back(U_prime * U2Dzeta8(U_even, 0, k_even));
+            } else {
+                int k_odd = (t - t_prime + 4) / 2;
+                auto U_odd_list = solve_approx_synthesis(U_prime.adjoint().to_SU2() * V_prime, eps, k_odd);
+#pragma omp critical
+                for(auto U_odd : U_odd_list) U_list.push_back(U_prime * U2Dzeta8(U_odd, 1, k_odd));
+            }
             end = std::chrono::system_clock::now();
             time = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0);
-            std::cout << time << "[ms]" << std::endl;
-
-            std::vector<U2Dzeta8> U_list;
-            for(auto U_even : U_even_list) U_list.push_back(U_prime * U2Dzeta8(U_even, 0, k_even));
-            for(auto U_odd : U_odd_list) U_list.push_back(U_prime * U2Dzeta8(U_odd, 1, k_odd));
-        
-            if(!U_list.empty()) {
-                U2Dzeta8 U = *std::min_element(U_list.begin(), U_list.end(), [](auto a, auto b) {
-                    return get_Tcount(a) < get_Tcount(b);
-                });
-                return exact_synthesize(U);
-            }
+            // std::cout << time << "[ms]" << std::endl;
         }
 
-        // // std::cout << "t=" << t << std::endl;
-        // // std::cout << "start" << std::endl;
-        // int k_even = (t+3) / 2;
-        // // 2k_even - 2 >= t
-        // int k_odd = (t+4) / 2;
-        // // 2k_odd - 3 >= t
-
-        // std::cout << "k_even=" << k_even << std::endl;
-        // std::cout << "k_odd =" << k_odd << std::endl;
-
-        // auto U_even_list = solve_approx_synthesis(V, eps, k_even);
-        // // std::cout << "end" << std::endl;
-        // auto U_odd_list = solve_approx_synthesis(V_prime, eps, k_odd);
-
-        // std::vector<U2Dzeta8> U_list;
-        // for(auto U_even : U_even_list) U_list.push_back(U2Dzeta8(U_even, 0, k_even));
-        // for(auto U_odd : U_odd_list) U_list.push_back(U2Dzeta8(U_odd, 1, k_odd));
-
-        // if(!U_list.empty()) {
-        //     U2Dzeta8 U = *std::min_element(U_list.begin(), U_list.end(), [](auto a, auto b) {
-        //         return get_Tcount(a) < get_Tcount(b);
-        //     });
-        //     return exact_synthesize(U);
-        // }
-
+        if(!U_list.empty()) {
+            U2Dzeta8 U = *std::min_element(U_list.begin(), U_list.end(), [](auto a, auto b) {
+                return get_Tcount(a) < get_Tcount(b);
+            });
+            return exact_synthesize(U);
+        }
         t++;
     }
 }
@@ -198,7 +158,7 @@ std::vector<ring::Zzeta8j> solve_approx_synthesis(SU2 V, Real eps, int k) {
         } 
     }
 
-    auto divisibleBySqrt2 = [](ring::Zzeta8j q) { return q.divisible(ring::Zroot2(0,1)); };
+    // auto divisibleBySqrt2 = [](ring::Zzeta8j q) { return q.divisible(ring::Zroot2(0,1)); };
     // Solutions.erase(std::remove_if(Solutions.begin(), Solutions.end(), divisibleBySqrt2), Solutions.end());
 
     return Solutions;

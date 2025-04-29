@@ -7,6 +7,7 @@
 #include <boost/multiprecision/cpp_int.hpp>
 
 
+
 namespace su2_compiler
 {
     // using Integer = long long;
@@ -18,7 +19,8 @@ namespace su2_compiler
     // inline static Integer abs(Integer x) { return boost::multiprecision::abs(x); }
 
     // using Real = boost::multiprecision::cpp_dec_float_50;
-    using Real = boost::multiprecision::number< boost::multiprecision::cpp_dec_float<50> >;
+    using Real = boost::multiprecision::cpp_dec_float_100;
+    // using Real = boost::multiprecision::number< boost::multiprecision::cpp_dec_float<50> >;
     // using Real = double;
 
     inline static Real sqrt(Real x) { return boost::multiprecision::sqrt(x); }

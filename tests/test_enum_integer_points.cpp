@@ -80,7 +80,7 @@ void test_LLL()
     assert(1.0 <= delta && delta <= pow((Real)2, (Real)(n*(n-1)) / 4.0));
 
     MatrixXI UU_inv = U * U_inv;
-    assert(UU_inv == MatrixXI::Identity(n,n));
+    assert((UU_inv - MatrixXI::Identity(n,n)).cwiseAbs().maxCoeff() == 0);
 }
 
 void test_cholesky()

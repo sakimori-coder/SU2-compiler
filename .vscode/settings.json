@@ -89,6 +89,9 @@
         "syncstream": "cpp",
         "core": "cpp",
         "alignedvector3": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "hash_map": "cpp",
+        "rope": "cpp",
+        "slist": "cpp"
     }
 }
