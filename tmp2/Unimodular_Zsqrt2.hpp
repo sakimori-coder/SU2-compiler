@@ -8,7 +8,7 @@
 #include "rings.hpp"
 #include "grid_solver.hpp"
 
-namespace SU2_Compiler
+namespace su2compiler
 {
 
 template <int N>

@@ -7,7 +7,7 @@
 #include "ring/Zroot2.hpp"
 
 
-namespace su2_compiler {
+namespace su2compiler {
 namespace ring {
 
 //==============================================================================
@@ -16,7 +16,8 @@ namespace ring {
 
 // basic properties
 [[nodiscard]] Complex Zzeta8::to_Complex() const {
-    return Real(a) + Real(b)*ZETA8 + Real(c)*ZETA8_POW2 + Real(d)*ZETA8_POW3;
+    return Real(a.get_mpz_t()) + Real(b.get_mpz_t()) * ZETA8() 
+         + Real(c.get_mpz_t()) * ZETA8_POW2() + Real(d.get_mpz_t())*ZETA8_POW3();
 }
 
 [[nodiscard]] bool Zzeta8::divisible(const Integer& r) const {

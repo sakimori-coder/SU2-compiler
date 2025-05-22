@@ -8,7 +8,7 @@
 #include "ring/Zzeta8.hpp"
 
 
-namespace su2_compiler {
+namespace su2compiler {
 namespace ring {
 
 //==============================================================================

@@ -11,7 +11,7 @@
 
 using namespace std;
 using namespace Eigen;
-using namespace su2_compiler;
+using namespace su2compiler;
 
 MatrixXR randomOrthogonalMatrix(int n, unsigned int seed=1234)
 {
@@ -137,8 +137,8 @@ void test_EnumIntegerPoints()
             VectorXR xvec_Real = xvec.cast<Real>(); 
             if((xvec_Real - p).dot(Q * (xvec_Real - p)) <= c) Y.push_back(xvec);
         }else{
-            Integer xi_min = (Integer)ceil(p(i) - sqrt(Q_inv(i,i) * c));
-            Integer xi_max = (Integer)floor(p(i) + sqrt(Q_inv(i,i) * c));
+            Integer xi_min = ceil_mpreal(p(i) - sqrt(Q_inv(i,i) * c));
+            Integer xi_max = floor_mpreal(p(i) + sqrt(Q_inv(i,i) * c));
             for(Integer xi = xi_min; xi <= xi_max; xi++){
                 xvec(i) = xi;
                 BF_EnumIntegerPoints(i+1);

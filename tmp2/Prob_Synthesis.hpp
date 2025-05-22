@@ -11,7 +11,7 @@
 #include "U2_ZOmega.hpp"
 
 
-namespace SU2_Compiler
+namespace su2compiler
 {
     /*
     Choi_Jamiolkowski行列を計算

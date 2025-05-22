@@ -9,7 +9,7 @@
 
 #include "type.hpp"
 
-namespace su2_compiler{
+namespace su2compiler{
 
 
 MatrixXR GSO(const MatrixXR& B)
@@ -53,13 +53,15 @@ std::tuple<MatrixXI, MatrixXI> LLL(MatrixXR B, Real delta)
 
     int k = 1;
     while(k < N){
+        // std::cout << k << std::endl;
         for(int j = k-1; j >= 0; j--){
             if(abs(mu(k,j)) > 0.5){
-                Integer q = (Integer)round(mu(k,j));
-                B.col(k) -= Real(q) * B.col(j);
+                Integer q = round_mpreal(mu(k,j));
+                Real q_real = Real(q.get_mpz_t(), PrecBits);
+                B.col(k) -= q_real * B.col(j);
                 U.col(k) -= q * U.col(j);
                 U_inv.row(j) += q * U_inv.row(k);
-                for(int l = 0; l <= j; l++) mu(k,l) -= Real(q) * mu(j,l);
+                for(int l = 0; l <= j; l++) mu(k,l) -= q_real * mu(j,l);
             }
         }
     
@@ -100,7 +102,7 @@ MatrixXR cholesky(const MatrixXR& A){
 
     for(int i = 0; i < N; i++){
         for(int j = 0; j <= i; j++){
-            Real sum = 0.0;
+            Real sum(0, PrecBits);
             for(int k = 0; k < j; k++){
                 sum += L(i,k) * L(j,k);
             }
@@ -116,58 +118,6 @@ MatrixXR cholesky(const MatrixXR& A){
     
     return L;
 }
-
-
-// std::vector<VectorXI> EnumIntegerPoints(MatrixXR Q, VectorXR p, Real c)
-// {
-//     int N = Q.rows();
-//     MatrixXR Q_inv = Q.inverse();
-//     std::vector<VectorXI> ret;
-
-//     if(N == 1){
-//         Integer x0_min = (Integer)ceil(p(0) - sqrt(Q_inv(0,0) * c));
-//         Integer x0_max = (Integer)floor(p(0) + sqrt(Q_inv(0,0) * c));
-//         for(Integer x0 = x0_min; x0 <= x0_max; x0++){
-//             VectorXI xvec(N);
-//             xvec(0) = x0;
-//             ret.push_back(xvec);
-//         }
-//     }else{
-//         MatrixXR B = cholesky(Q_inv).transpose();
-//         auto [U_T, U_T_inv] = LLL(B, 0.75);
-//         MatrixXI U = U_T.transpose();
-//         MatrixXI U_inv = U_T_inv.transpose();
-//         MatrixXR U_Real = U.cast<Real>();
-//         MatrixXR U_inv_Real = U_inv.cast<Real>();
-
-//         p = U_Real * p;
-//         Q = U_inv_Real.transpose() * Q * U_inv_Real;
-//         Q_inv = U_Real * Q_inv * U_Real.transpose();
-        
-//         Integer x0_min = (Integer)ceil(p(0) - sqrt(Q_inv(0,0) * c));
-//         Integer x0_max = (Integer)floor(p(0) + sqrt(Q_inv(0,0) * c));
-//         for(Integer x0 = x0_min; x0 <= x0_max; x0++){
-//             VectorXI xvec(N);
-//             xvec(0) = x0;
-            
-//             MatrixXR A_inv = Q.block(1,1, N-1,N-1).inverse();
-//             VectorXR b = (x0 - p(0)) * Q.col(0).tail(N-1);
-//             Real next_c = c;
-//             MatrixXR next_p = p.tail(N-1);
-//             next_p -= A_inv * b;
-//             next_c -= Q(0,0) * (x0 - p(0)) * (x0 - p(0));
-//             next_c += b.dot(A_inv * b);
-//             auto X_tail = EnumIntegerPoints(Q.block(1,1, N-1,N-1), next_p, next_c);
-//             for(auto xvec_tail : X_tail){
-//                 xvec.tail(N-1) = xvec_tail;
-
-//                 ret.push_back(U_inv * xvec);
-//             }
-//         }
-//     }
-
-//     return ret;
-// }
 
 
 
@@ -219,8 +169,8 @@ std::vector<VectorXI> EnumIntegerPoints(MatrixXR Q, VectorXR p, Real c)
 
         if(N == 1){
             Real delta = sqrt(Q_inv(0,0) * c);
-            Integer x0_min = (Integer)ceil(p(0) - delta);
-            Integer x0_max = (Integer)floor(p(0) + delta);
+            Integer x0_min = ceil_mpreal(p(0) - delta);
+            Integer x0_max = floor_mpreal(p(0) + delta);
             for(Integer x0 = x0_min; x0 <= x0_max; x0++){
                 Eigen::Vector<Integer, 1> xvec;
                 xvec(0) = x0;
@@ -232,19 +182,20 @@ std::vector<VectorXI> EnumIntegerPoints(MatrixXR Q, VectorXR p, Real c)
             // Q_inv = U_Real * Q_inv * U_Real.transpose();
 
             Real delta = sqrt(Q_inv(0,0) * c);
-            Integer x0_min = (Integer)ceil(p(0) - delta);
-            Integer x0_max = (Integer)floor(p(0) + delta);
+            Integer x0_min = ceil_mpreal(p(0) - delta);
+            Integer x0_max = floor_mpreal(p(0) + delta);
 
             for(Integer x0 = x0_min; x0 <= x0_max; x0++){
                 VectorXI xvec(N);
                 xvec(0) = x0;
                 
-                VectorXR b = (Real(x0) - p(0)) * Q.col(0).tail(N-1);
+                Real x0_real = Real(x0.get_mpz_t(), PrecBits);
+                VectorXR b = (x0_real - p(0)) * Q.col(0).tail(N-1);
                 Real next_c = c;
                 MatrixXR next_p = p.tail(N-1);
-                next_p -= (Real(x0) - p(0)) * A_invb;
-                next_c -= Q(0,0) * (Real(x0) - p(0)) * (Real(x0) - p(0));
-                next_c += b.dot((Real(x0) - p(0)) * A_invb);
+                next_p -= (x0_real - p(0)) * A_invb;
+                next_c -= Q(0,0) * (x0_real - p(0)) * (x0_real - p(0));
+                next_c += b.dot((x0_real - p(0)) * A_invb);
                 auto X_tail = _EnumIntegerPoints(N-1, next_p, next_c);
                 for(auto xvec_tail : X_tail){
                     xvec.tail(N-1) = xvec_tail;

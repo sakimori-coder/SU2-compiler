@@ -1,4 +1,4 @@
-#include "clifford_t/exact_synthesize.hpp"
+#include "clifford_t/exact_synthesis.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -9,7 +9,7 @@
 #include "type.hpp"
 
 
-namespace su2_compiler {
+namespace su2compiler {
 namespace clifford_t {
 
 
@@ -66,7 +66,7 @@ SO3Droot2& SO3Droot2::operator*=(const SO3Droot2& r) {
 //==============================================================================
 //  implement U2Zzeta8
 //==============================================================================
-U2Dzeta8::U2Dzeta8(Matrix2Zzeta8 _mat, int _k) {
+U2Dzeta8::U2Dzeta8(Matrix2Zzeta8 _mat, UINT _k) {
 	mat = _mat;
 	k = _k;
 	Matrix2Zzeta8 mat_dag;
@@ -78,8 +78,8 @@ U2Dzeta8::U2Dzeta8(Matrix2Zzeta8 _mat, int _k) {
 	this->reduce();
 }
 
-U2Dzeta8::U2Dzeta8(ring::Zzeta8 u, ring::Zzeta8 t, int l, int _k) {
-	if(u.norm_complex() + t.norm_complex() != (Integer(1) << _k)) {
+U2Dzeta8::U2Dzeta8(ring::Zzeta8 u, ring::Zzeta8 t, int l, UINT _k) {
+	if(u.norm_complex() + t.norm_complex() != ring::Zroot2(Integer(1) << _k)) {
 		throw std::invalid_argument("U2Dzeta8() : the given matrix is not in U(2)");
 	}
 
@@ -122,11 +122,11 @@ U2Dzeta8::U2Dzeta8(std::string sequence) {
 		zeta8_pow *= ring::Zzeta8(0,1,0,0); 
 	}
 
-	Complex u = mat(0,0).to_Complex() / pow(SQRT2, Real(k));
-	Complex t = mat(1,0).to_Complex() / pow(SQRT2, Real(k));
+	Complex u = mat(0,0).to_Complex() / pow_ui(SQRT2(), k);
+	Complex t = mat(1,0).to_Complex() / pow_ui(SQRT2(), k);
 	for(int i = 0; i < l; i++) {
-		u /= ZETA16;
-		t /= ZETA16;
+		u /= ZETA16();
+		t /= ZETA16();
 	}
 	return SU2(u, t);
 }
@@ -202,11 +202,11 @@ U2Dzeta8& U2Dzeta8::operator*=(const U2Dzeta8& r) {
 
 extern const std::pair<std::string, Matrix3Zroot2> Clifford_SO3_list[24];
 
-std::string exact_synthesize(U2Dzeta8 U) {
-	return exact_synthesize(U.to_SO3Droot2());
+std::string exact_synthesis(U2Dzeta8 U) {
+	return exact_synthesis(U.to_SO3Droot2());
 }
 
-std::string exact_synthesize(SO3Droot2 U) {
+std::string exact_synthesis(SO3Droot2 U) {
     std::string sequence = "";
     while(U.k > 0){
         Eigen::Matrix3i P;

@@ -6,7 +6,7 @@
 #include "src/Prob_Synthesis.hpp"
 
 using namespace std;
-using namespace SU2_Compiler;
+using namespace su2compiler;
 
 int main(){
     set_random_unitary_seed(1234);

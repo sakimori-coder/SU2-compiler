@@ -8,7 +8,7 @@
 
 
 using namespace std;
-using namespace SU2_Compiler;
+using namespace su2compiler;
 
 
 

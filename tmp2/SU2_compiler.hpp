@@ -6,6 +6,6 @@
 
 
 
-namespace SU2_Compiler{
-    std::string SU2_compiler(quaternion U, FTYPE eps, int l);
+namespace su2compiler{
+    std::string su2compiler(quaternion U, FTYPE eps, int l);
 }

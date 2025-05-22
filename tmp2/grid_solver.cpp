@@ -7,7 +7,7 @@
 #include "rings.hpp"
 
 
-namespace SU2_Compiler
+namespace su2compiler
 {
     ZRoot2 pow_lambda(int n){
         ZRoot2 ans = {1,0};

@@ -1,4 +1,4 @@
-#include "SU2_Compiler.hpp"
+#include "su2compiler.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -16,7 +16,7 @@
 
 
 
-namespace SU2_Compiler
+namespace su2compiler
 {
 
 

@@ -5,7 +5,7 @@
 
 #include "type.hpp"
 
-namespace su2_compiler {
+namespace su2compiler {
 namespace ring {
 
 //==============================================================================
@@ -13,8 +13,8 @@ namespace ring {
 //==============================================================================
 
 //  basic properties
-[[nodiscard]] Real Zroot2::to_Real() const {
-    return Real(a) + Real(b) * SQRT2;
+[[nodiscard]] Real Zroot2::to_Real() const noexcept {
+    return Real(a.get_mpz_t()) + Real(b.get_mpz_t()) * SQRT2();
 }
 
 [[nodiscard]] bool Zroot2::divisible(const Integer& r) const{

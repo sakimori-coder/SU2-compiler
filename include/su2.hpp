@@ -6,7 +6,7 @@
 
 #include "type.hpp"
 
-namespace su2_compiler
+namespace su2compiler
 {
 
 

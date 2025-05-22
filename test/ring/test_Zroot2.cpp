@@ -4,8 +4,8 @@
 #include "ring/Zroot2.hpp"
 
 using namespace std;
-using namespace su2_compiler;
-using su2_compiler::ring::Zroot2;
+using namespace su2compiler;
+using su2compiler::ring::Zroot2;
 
 TEST(Zroot2, Add) {
     Integer a1 =  8695;

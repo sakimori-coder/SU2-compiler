@@ -6,19 +6,22 @@
 #include "type.hpp"
 #include "ring/all.hpp"
 #include "su2.hpp"
-#include "clifford_t/synthesize.hpp"
+#include "clifford_t/deterministic.hpp"
 
-using namespace::su2_compiler;
+using namespace::su2compiler;
 
-TEST(Snthesize, random) {
-    SU2 V = su2_compiler::random_unitary();
-    Real eps = 1e-12;
+TEST(deterministic_synthesis, random) {
+    SU2 V = su2compiler::random_unitary(1234);
+    // SU2 V(Real(3./5.), 0.0, Real(4./5.), 0.0);
+    Real eps = 1e-5;
 
-    std::string sequence = clifford_t::synthesize(V, eps);
+    std::cout << "V = \n" << V << std::endl;
 
-    SU2 H(Complex(0.0, 1.0) / SQRT2, Complex(0.0, 1.0) / SQRT2);
-    SU2 S(std::conj(ZETA8), Complex(0.0, 0.0));
-    SU2 T(std::conj(ZETA16), Complex(0.0, 0.0));
+    std::string sequence = clifford_t::deterministic_synthesis(V, eps);
+
+    SU2 H(Complex(0.0, 1.0) / SQRT2(), Complex(0.0, 1.0) / SQRT2());
+    SU2 S(std::conj(ZETA8()), Complex(0.0, 0.0));
+    SU2 T(std::conj(ZETA16()), Complex(0.0, 0.0));
 
     SU2 U(1,0,0,0);
     for(char gate : sequence) {
@@ -42,7 +45,7 @@ TEST(Snthesize, random) {
     EXPECT_NEAR(dist, 0.0, static_cast<double>(eps));
     std::cout << V << std::endl;
     std::cout << sequence << std::endl;
-    std::cout << "#T=" << std::count(sequence.begin(), sequence.end(), 'T') << std::endl;
+    // std::cout << "#T=" << std::count(sequence.begin(), sequence.end(), 'T') << std::endl;
 }
 
 

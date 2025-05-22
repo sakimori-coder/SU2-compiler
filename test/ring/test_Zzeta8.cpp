@@ -4,8 +4,8 @@
 #include "ring/Zzeta8.hpp"
 
 using namespace std;
-using namespace su2_compiler;
-using su2_compiler::ring::Zzeta8;
+using namespace su2compiler;
+using su2compiler::ring::Zzeta8;
 
 
 TEST(Zzeta8, Add) {

@@ -9,7 +9,7 @@
 #include "linalg.hpp"
 
 
-namespace SU2_Compiler
+namespace su2compiler
 {
     /*
     B(u1,ε)とB(u2,ε)が交わるかを判定する。

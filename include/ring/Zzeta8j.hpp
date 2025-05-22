@@ -6,7 +6,7 @@
 #include "Zroot2.hpp"
 #include "Zzeta8.hpp"
 
-namespace su2_compiler {
+namespace su2compiler {
 namespace ring {
 
 //==============================================================================
@@ -28,7 +28,7 @@ namespace ring {
 //
 //  Example
 //  -------
-//      using su2_compiler::ring::Zzeta8j;
+//      using su2compiler::ring::Zzeta8j;
 //
 //      Zzeta8j u(1, 1, 0, 0,            // 1 + ζ₈
 //                0, 0, 0, 0);           // (no j‑part)
@@ -46,11 +46,11 @@ struct Zzeta8j
     //------------------------------------------------------------------------
     //  constructor
     constexpr Zzeta8j() noexcept = default;
-    constexpr Zzeta8j(Integer a1, Integer b1, Integer c1, Integer d1,
-                      Integer a2, Integer b2, Integer c2, Integer d2) noexcept : u({a1,b1,c1,d1}), t({a2,b2,c2,d2}) {}
-    constexpr Zzeta8j(Zzeta8 _u, Zzeta8 _t) noexcept : u(_u), t(_t) {}
-    constexpr explicit Zzeta8j(Zroot2 r) noexcept : u(r), t(0) {}
-    constexpr explicit Zzeta8j(Zzeta8 _u) noexcept : u(_u), t(0) {}
+    Zzeta8j(Integer a1, Integer b1, Integer c1, Integer d1,
+            Integer a2, Integer b2, Integer c2, Integer d2) noexcept : u({a1,b1,c1,d1}), t({a2,b2,c2,d2}) {}
+    Zzeta8j(Zzeta8 _u, Zzeta8 _t) noexcept : u(_u), t(_t) {}
+    explicit Zzeta8j(Zroot2 r) noexcept : u(r), t(0) {}
+    explicit Zzeta8j(Zzeta8 _u) noexcept : u(_u), t(0) {}
 
 
     //------------------------------------------------------------------------
@@ -63,11 +63,11 @@ struct Zzeta8j
         return this->norm_quaternion().norm_sqrt2();
     }
 
-    [[nodiscard]] constexpr Zzeta8j conj_quaternion() const noexcept {
+    [[nodiscard]] Zzeta8j conj_quaternion() const noexcept {
         return {u.conj_complex(), -t};
     }
 
-    [[nodiscard]] constexpr Zzeta8j conj_sqrt2() const noexcept {
+    [[nodiscard]] Zzeta8j conj_sqrt2() const noexcept {
         return {u.conj_sqrt2(), t.conj_sqrt2()};
     }
 
@@ -88,7 +88,7 @@ struct Zzeta8j
 
     //------------------------------------------------------------------------
     //  arithmetic (compound)
-    constexpr Zzeta8j operator-() const noexcept { return {-u, -t}; }
+    Zzeta8j operator-() const noexcept { return {-u, -t}; }
 
     Zzeta8j& operator*=(const Integer& r) noexcept;
     Zzeta8j& operator*=(const Zroot2& r) noexcept;

@@ -6,6 +6,8 @@ PBSe/
 PBSo/
 .vscode/
 
+build/
+
 # Prerequisites
 *.d
 

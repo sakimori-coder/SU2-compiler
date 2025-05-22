@@ -14,7 +14,7 @@ using std::endl;
 
 
 
-namespace SU2_Compiler
+namespace su2compiler
 {
     bool check_inter_2ball(quaternion U1, quaternion U2, FTYPE eps)
     {

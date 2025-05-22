@@ -12,7 +12,7 @@
 #include "rings.hpp"
 #include "SpecialUnitary2.hpp"
 
-namespace SU2_Compiler
+namespace su2compiler
 {
 
 template<typename Matrix>

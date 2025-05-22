@@ -6,7 +6,7 @@
 #include "Zroot2.hpp"
 
 
-namespace su2_compiler {
+namespace su2compiler {
 namespace ring {
 
 //==============================================================================
@@ -25,7 +25,7 @@ namespace ring {
 //
 //  Example
 //  -------
-//      using su2_compiler::ring::Zzeta8;
+//      using su2compiler::ring::Zzeta8;
 //
 //      Zzeta8 u(1, 0, 1, 0);            // 1 + ζ₈²
 //      Zzeta8 v(0, 1, 0, -1);           // ζ₈ – ζ₈³
@@ -47,14 +47,14 @@ struct Zzeta8
     //------------------------------------------------------------------------
     //  constructor
     constexpr Zzeta8() noexcept = default;
-    constexpr explicit Zzeta8(int _a) noexcept : a(_a), b(0), c(0), d(0) {}
-    constexpr explicit Zzeta8(Integer _a) noexcept : a(_a), b(0), c(0), d(0) {}
-    constexpr explicit Zzeta8(Zroot2 r) noexcept : a(r.a), b(r.b), c(0), d(-r.b) {}
-    constexpr Zzeta8(Integer _a, Integer _b, Integer _c, Integer _d) noexcept : a(_a), b(_b), c(_c), d(_d) {}
+    explicit Zzeta8(int _a) noexcept : a(_a), b(0), c(0), d(0) {}
+    explicit Zzeta8(Integer _a) noexcept : a(_a), b(0), c(0), d(0) {}
+    explicit Zzeta8(Zroot2 r) noexcept : a(r.a), b(r.b), c(0), d(-r.b) {}
+    Zzeta8(Integer _a, Integer _b, Integer _c, Integer _d) noexcept : a(_a), b(_b), c(_c), d(_d) {}
     
     //------------------------------------------------------------------------
     //  basic properties
-    [[nodiscard]] constexpr Zroot2 norm_complex() const noexcept {
+    [[nodiscard]] Zroot2 norm_complex() const noexcept {
         return {a*a + b*b + c*c + d*d, a*b - a*d + c*b + c*d};
     }
 
@@ -62,11 +62,11 @@ struct Zzeta8
         return this->norm_complex().norm_sqrt2();
     }
 
-    [[nodiscard]] constexpr Zzeta8 conj_complex() const noexcept {
+    [[nodiscard]] Zzeta8 conj_complex() const noexcept {
         return {a, -d, -c, -b};
     }
 
-    [[nodiscard]] constexpr Zzeta8 conj_sqrt2() const noexcept {
+    [[nodiscard]] Zzeta8 conj_sqrt2() const noexcept {
         return {a, -b, c, -d};
     }
 
@@ -96,7 +96,7 @@ struct Zzeta8
     Zzeta8& operator/=(const Zroot2& r);
     Zzeta8& operator/=(const Zzeta8& r);
 
-    constexpr Zzeta8 operator-() const noexcept { return {-a,-b,-c,-d}; }
+    Zzeta8 operator-() const noexcept { return {-a,-b,-c,-d}; }
 
     auto operator<=>(const Zzeta8&) const = default;
     bool operator<(const Zzeta8& r) const {

@@ -4,11 +4,11 @@
 
 #include "src/type.hpp"
 #include "src/quaternion.hpp"
-#include "src/SU2_compiler.cpp"
+#include "src/su2compiler.cpp"
 
 
 using namespace std;
-using namespace SU2_Compiler;
+using namespace su2compiler;
 
 
 
@@ -45,7 +45,7 @@ int main(){
         
         for(int i = 3; i < n; i++){
             start = chrono::system_clock::now();
-            string V = SU2_compiler(U[i], eps, 0);
+            string V = su2compiler(U[i], eps, 0);
             end = chrono::system_clock::now();
             time += static_cast<double>(chrono::duration_cast<chrono::microseconds>(end - start).count() / 1000.0);
             int T_count = count(V.begin(), V.end(), 'T');

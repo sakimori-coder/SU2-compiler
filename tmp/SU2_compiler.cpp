@@ -3,10 +3,10 @@
 #include "src/type.hpp"
 #include "src/quaternion.hpp"
 #include "src/ExactSynthesis.hpp"
-#include "src/SU2_compiler.hpp"
+#include "src/su2compiler.hpp"
 
 using namespace std;
-using namespace SU2_Compiler;
+using namespace su2compiler;
 
 int main(){
     FTYPE eps = 1e-3;
@@ -18,7 +18,7 @@ int main(){
     U = random_unitary();
     // U = {3.0/5.0, 0, 4.0/5.0, 0.0};
 
-    string V_str = SU2_compiler(U, eps, 0);
+    string V_str = su2compiler(U, eps, 0);
     cout << "V = " << V_str << endl;
     cout << "Tカウント = " << count(V_str.begin(), V_str.end(), 'T') << endl;
     quaternion V = to_quaternion(V_str);

@@ -4,7 +4,7 @@
 
 #include "type.hpp"
 
-namespace su2_compiler {
+namespace su2compiler {
 namespace ring {
 
 //==============================================================================
@@ -20,7 +20,7 @@ namespace ring {
 //
 //  Example
 //  -------
-//      using su2_compiler::ring::Zroot2;
+//      using su2compiler::ring::Zroot2;
 //      Zroot2 x(3, 2);                 // 3 + 2√2
 //      Zroot2 y(1, -1);                // 1 – √2
 //      Zroot2 z = x * y;               // (3 + 2√2)(1 – √2) = -1 + 1√2
@@ -32,21 +32,21 @@ struct Zroot2
     Integer b = 0;
     
     constexpr Zroot2() noexcept = default;
-    constexpr Zroot2(int _a) noexcept : a(_a), b(0) {}
-    constexpr Zroot2(Integer _a) noexcept : a(_a), b(0) {}
-    constexpr Zroot2(Integer _a, Integer _b) noexcept : a(_a), b(_b) {}
+    Zroot2(int _a) noexcept : a(_a), b(0) {}
+    Zroot2(Integer _a) noexcept : a(_a), b(0) {}
+    Zroot2(Integer _a, Integer _b) noexcept : a(_a), b(_b) {}
     
     //------------------------------------------------------------------------
     //  basic properties
-    [[nodiscard]] constexpr Integer norm_sqrt2() const noexcept {
+    [[nodiscard]] Integer norm_sqrt2() const noexcept {
         return a * a - 2 * b * b;
     }
 
-    [[nodiscard]] constexpr Zroot2 conj_sqrt2() const noexcept {
+    [[nodiscard]] Zroot2 conj_sqrt2() const noexcept {
         return {a, -b};
     }
 
-    [[nodiscard]] Real to_Real() const;
+    [[nodiscard]] Real to_Real() const noexcept;
 
     [[nodiscard]] bool divisible(const Integer& r) const;
     [[nodiscard]] bool divisible(const Zroot2& r) const;

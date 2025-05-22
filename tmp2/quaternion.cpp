@@ -3,7 +3,7 @@
 
 #include <random>
 
-namespace SU2_Compiler
+namespace su2compiler
 {
     Matrix2cf quaternion::get_Matrix() const
     {

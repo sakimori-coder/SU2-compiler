@@ -4,7 +4,7 @@
 #include <iostream>
 
 
-namespace SU2_Compiler
+namespace su2compiler
 {
     Mat2ZOmega U2_ZOmega::get_Matrix() const
     {

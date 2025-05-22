@@ -4,11 +4,11 @@
 
 #include "type.hpp"
 #include "SpecialUnitary2.hpp"
-#include "SU2_Compiler.hpp"
+#include "su2compiler.hpp"
 
 using namespace std;
 using namespace Eigen;
-using namespace SU2_Compiler;
+using namespace su2compiler;
 
 int main(){
     SpecialUnitary2 V = random_unitary(123);

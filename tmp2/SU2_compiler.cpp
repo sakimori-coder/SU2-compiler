@@ -1,4 +1,4 @@
-#include "SU2_compiler.hpp"
+#include "su2compiler.hpp"
 
 #include <vector>
 #include <string>
@@ -18,7 +18,7 @@
 using std::cout;
 using std::endl;
 
-namespace SU2_Compiler{
+namespace su2compiler{
 
 ITYPE ITYPE_sqrt(ITYPE n){
     if(n < 0) return -1;
@@ -119,7 +119,7 @@ double time;
 
 
 
-// std::string SU2_compiler(quaternion U, FTYPE eps, int l){
+// std::string su2compiler(quaternion U, FTYPE eps, int l){
 //     Matrix4f P;
 //     P << U.a,-U.b,-U.c,-U.d,
 //          U.b, U.a, U.d,-U.c,
@@ -650,7 +650,7 @@ std::vector<VectorXi> Enumerate_Integer_Points(
 }
 
 
-std::string SU2_compiler(quaternion U, FTYPE eps, int l){
+std::string su2compiler(quaternion U, FTYPE eps, int l){
 
     // 楕円の固有ベクトル
     Matrix8f P;
@@ -867,7 +867,7 @@ std::string SU2_compiler(quaternion U, FTYPE eps, int l){
 
 
 
-// std::string SU2_compiler(quaternion U, FTYPE eps, int l){
+// std::string su2compiler(quaternion U, FTYPE eps, int l){
 //     Matrix4f P;
 //     P << U.a,-U.b,-U.c,-U.d,
 //          U.b, U.a, U.d,-U.c,
@@ -1078,7 +1078,7 @@ std::string SU2_compiler(quaternion U, FTYPE eps, int l){
 
 
 
-// std::string SU2_compiler(quaternion U, FTYPE eps, int l){
+// std::string su2compiler(quaternion U, FTYPE eps, int l){
 //     Matrix4f P;
 //     P << U.a,-U.b,-U.c,-U.d,
 //          U.b, U.a, U.d,-U.c,

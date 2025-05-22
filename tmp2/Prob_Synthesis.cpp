@@ -13,10 +13,10 @@
 #include "ExactSynthesis.hpp"
 #include "eps_net_verification.hpp"
 #include "sdpa_dd.hpp"
-#include "SU2_compiler.cpp"
+#include "su2compiler.cpp"
 
 
-namespace SU2_Compiler
+namespace su2compiler
 {
     Eigen::Matrix<FTYPE, 4, 4> CJ_MB(Eigen::Matrix<CTYPE, 2, 2> U)
     {

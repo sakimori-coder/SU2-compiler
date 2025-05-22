@@ -7,7 +7,7 @@
 #include <Eigen/Core>
 
 
-namespace SU2_Compiler
+namespace su2compiler
 {
     template<typename T, int N, int M>
     Eigen::Matrix<T, N, M> Gram_Schmidt(Eigen::Matrix<T, N, M> A)
