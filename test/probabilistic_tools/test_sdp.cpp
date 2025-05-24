@@ -181,9 +181,10 @@ TEST(SDP, example1) {
 
 
 TEST(SDP, example2) {
+    mpfr::mpreal::set_default_prec(1024);
     int m = 5;
-    int NumBlocks = 4;
-    std::vector<int> BlockSizes = {2,3,1,1};
+    int NumBlocks = 3;
+    std::vector<int> BlockSizes = {2,3,-2};
 
     VectorXR c(m);
     c << 1.1, -10, 6.6 , 19 , 4.1;
@@ -191,7 +192,10 @@ TEST(SDP, example2) {
     std::vector<std::vector<MatrixXR>> Fmat(m+1);
     for(int i = 0; i <= m; i++){
         Fmat[i].resize(NumBlocks);
-        for(int j = 0; j < NumBlocks; j++) Fmat[i][j] = MatrixXR::Zero(BlockSizes[j], BlockSizes[j]);
+        for(int j = 0; j < NumBlocks; j++) {
+            if(BlockSizes[j] > 0) Fmat[i][j] = MatrixXR::Zero(BlockSizes[j], BlockSizes[j]);
+            else                  Fmat[i][j] = VectorXR::Zero(-BlockSizes[j]);
+        }
     }
     
     Fmat[0][0] << -1.4, -3.2,
@@ -199,48 +203,42 @@ TEST(SDP, example2) {
     Fmat[0][1] << 15,  -12,    2.1,
                  -12,   16,   -3.8,
                   2.1, -3.8, 15;
-    Fmat[0][2] << 1.8;
-    Fmat[0][3] << -4.0;
+    Fmat[0][2] << 1.8, -4.0;
 
     Fmat[1][0] << 0.5,  5.2,
                   5.2, -5.3;
     Fmat[1][1] << 7.8, -2.4,  6.0,
                  -2.4,  4.2,  6.5,
                  6.0,  6.5,  2.1;
-    Fmat[1][2] << -4.5;
-    Fmat[1][3] << -3.5;
+    Fmat[1][2] << -4.5, -3.5;
 
     Fmat[2][0] << 1.7,  7.0,
                   7.0, -9.3 ;
     Fmat[2][1] << -1.9, -0.9, -1.3 ,
                   -0.9, -0.8, -2.1,
                   -1.3, -2.1,  4.0;
-    Fmat[2][2] << -0.2;
-    Fmat[2][3] << -3.7;
+    Fmat[2][2] << -0.2, -3.7;
 
     Fmat[3][0] << 6.3, -7.5,
                  -7.5, -3.3;
     Fmat[3][1] << 0.2,  8.8,  5.4 ,
                   8.8,  3.4, -0.4,
                   5.4, -0.4,  7.5;
-    Fmat[3][2] << -3.3;
-    Fmat[3][3] << -4.0;
+    Fmat[3][2] << -3.3, -4.0;
 
     Fmat[4][0] << -2.4, -2.5,
                   -2.5, -2.9;
     Fmat[4][1] << 3.4, -3.2, -4.5,
                  -3.2,  3.0, -4.8,
                  -4.5, -4.8,  3.6;
-    Fmat[4][2] << 4.8;
-    Fmat[4][3] << 9.7;
+    Fmat[4][2] << 4.8, 9.7;
 
     Fmat[5][0] << -6.5, -5.4 ,
                   -5.4, -6.6;
     Fmat[5][1] << 6.7, -7.2, -3.6,
                  -7.2,  7.3, -3.0,
                  -3.6, -3.0, -1.4;
-    Fmat[5][2] << 6.1;
-    Fmat[5][3] << -1.5;
+    Fmat[5][2] << 6.1, -1.5;
 
 
     std::vector<sdp::DiagBlockMatrix> F;

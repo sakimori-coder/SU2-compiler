@@ -19,8 +19,12 @@ MatrixXR DiagBlockMatrix::to_DenseMatrix() const noexcept {
     MatrixXR DenseM = MatrixXR::Zero(TotalSize, TotalSize);
     int START = 0;
     for(int i = 0; i < NumBlocks; i++){
-        DenseM(Eigen::seqN(START, BlockSizes[i]), Eigen::seqN(START, BlockSizes[i])) = M[i];
-        START += BlockSizes[i];
+        if(BlockSizes[i] > 0) {
+            DenseM(Eigen::seqN(START, BlockSizes[i]), Eigen::seqN(START, BlockSizes[i])) = M[i];
+        } else {
+            for(int j = 0; j < -BlockSizes[i]; j++) DenseM(START+j, START+j) = M[i](j);
+        }
+        START += std::abs(BlockSizes[i]);
     }
     return DenseM;
 }
@@ -28,7 +32,8 @@ MatrixXR DiagBlockMatrix::to_DenseMatrix() const noexcept {
 DiagBlockMatrix DiagBlockMatrix::transpose() const noexcept {
     std::vector<MatrixXR> M_transpose(NumBlocks);
     for(int i = 0; i < NumBlocks; i++) {
-        M_transpose[i] = M[i].transpose();
+        if(BlockSizes[i] > 0) M_transpose[i] = M[i].transpose();
+        else                  M_transpose[i] = M[i];
     }
     return DiagBlockMatrix(M_transpose);
 }
@@ -36,10 +41,11 @@ DiagBlockMatrix DiagBlockMatrix::transpose() const noexcept {
 DiagBlockMatrix DiagBlockMatrix::inverse() const {
     std::vector<MatrixXR> M_inv(NumBlocks);
     for(int i = 0; i < NumBlocks; i++) {
-        if(M[i].cols() == 1) {
-            M_inv[i] = Matrix1R::Constant(Real(1.0) / M[i](0,0));
+        if(BlockSizes[i] > 0) {
+            M_inv[i] = M[i].inverse();
+        } else {
+            M_inv[i] = M[i].cwiseInverse();
         }
-        else M_inv[i] = M[i].inverse();
     }
     return DiagBlockMatrix(M_inv);
 }
@@ -55,11 +61,11 @@ Real DiagBlockMatrix::maxAbsCoeff() const noexcept {
 DiagBlockMatrix DiagBlockMatrix::cholesky_decomposition() const {
     std::vector<MatrixXR> L(NumBlocks);
     for(int i = 0; i < NumBlocks; i++){
-        if(M[i].cols() == 1){
-            L[i] = Matrix1R::Constant(M[i](0,0));
-        }else {
+        if(BlockSizes[i] > 0){
             Eigen::LLT<MatrixXR> llt(M[i]);
             L[i] = llt.matrixL();
+        } else {
+            L[i] = M[i].cwiseSqrt();
         }
     }
     return DiagBlockMatrix(L);
@@ -68,12 +74,12 @@ DiagBlockMatrix DiagBlockMatrix::cholesky_decomposition() const {
 std::vector<Real> DiagBlockMatrix::compute_eigenvalues() const {
     std::vector<Real> ret;
     for(int i = 0; i < NumBlocks; i++){
-        if(M[i].cols() == 1) {
-            ret.push_back(Real(1.0));
-        } else {
+        if(BlockSizes[i] > 0) {
             Eigen::SelfAdjointEigenSolver<MatrixXR> es(M[i]);
             ret.insert(ret.end(), es.eigenvalues().data(), 
                                   es.eigenvalues().data() + es.eigenvalues().size());
+        } else {
+            ret.insert(ret.end(), M[i].data(), M[i].data() + M[i].size());
         }
     }
     std::sort(ret.begin(), ret.end());
@@ -111,7 +117,8 @@ DiagBlockMatrix& DiagBlockMatrix::operator*=(const DiagBlockMatrix& r)
     }
 
     for(int i = 0; i < NumBlocks; i++){
-        M[i] *= r.M[i];
+        if(BlockSizes[i] > 0) M[i] *= r.M[i];
+        else                  M[i] = M[i].cwiseProduct(r.M[i]);
     }
     return *this;
 }
@@ -156,9 +163,10 @@ DiagBlockMatrix BlockIdentity(const std::vector<int>& structure)
 {
     std::vector<MatrixXR> I;
     for(int size : structure){
-        I.push_back(MatrixXR::Identity(size, size));
+        if(size > 0) I.push_back(MatrixXR::Identity(size, size));
+        else         I.push_back(VectorXR::Ones(-size));
     }
-    return I;
+    return DiagBlockMatrix(I);
 }
 
 Real HSinner(const DiagBlockMatrix& A, const DiagBlockMatrix& B)
@@ -180,8 +188,22 @@ bool isSymmetric(const MatrixXR& A, Real tol = 1e-20) {
 }
 
 bool isSymmetric(const DiagBlockMatrix& A, Real tol = 1e-20) {
-    for(int i = 0; i < A.NumBlocks; i++) if(!isSymmetric(A.M[i])) return false;
+    for(int i = 0; i < A.NumBlocks; i++) {
+        if(A.BlockSizes[i] > 0 && !isSymmetric(A.M[i])) return false;
+    }
     return true;
+}
+
+
+// α = max{ λ \in [0,1] | X + λdX >= O }
+Real compute_length(const DiagBlockMatrix& X, const DiagBlockMatrix& dX) {
+    Real alpha;
+    DiagBlockMatrix L = X.cholesky_decomposition();
+    DiagBlockMatrix S = L.inverse() * dX * L.inverse().transpose();
+    Real lambda_min = S.compute_eigenvalues().front();
+    if(lambda_min >= 0) alpha = 1.0;
+    else                alpha = min(Real(1.0), -1.0 / lambda_min);
+    return alpha;
 }
 
 
@@ -199,7 +221,7 @@ VectorXR SDP(
 {
     int m = c.rows();   // F = {F_0, F_1, ... , F_m}
     std::vector<int> BlockSizes = F[0].structure();
-    int n = std::reduce(BlockSizes.begin(), BlockSizes.end());
+    int n = F[0].get_TotalSize();
 
     for(int i = 0; i <= m; i++) {
         if(!isSymmetric(F[i])) {
@@ -281,33 +303,88 @@ VectorXR SDP(
 
 
 //===========================================================================
-// STEP2 : Search Direction
+// STEP2 : Predictor Step
 //===========================================================================
+    //=======================================================================
+    // STEP2-1 : Search Direction
+    //=======================================================================
         // Compute Xinv
+        double start, end;
+        start = get_time_sec();
         DiagBlockMatrix Xinv = X.inverse();
         // Compute B
         MatrixXR B(m,m);
         for(int i = 0; i < m; i++){
-            for(int j = 0; j < m; j++){
-                DiagBlockMatrix left = Xinv * F[i+1] * Y;
+            DiagBlockMatrix left = Xinv * F[i+1] * Y;
+            // DiagBlockMatrix left = F[i+1];
+            for(int j = 0; j <= i; j++){
                 DiagBlockMatrix right = F[j+1];
-                B(i,j) = HSinner(left, right);
+                B(i,j) = B(j,i) = HSinner(left, right);
             }
         }
+        end = get_time_sec();
+        std::cout << "1 : " << end - start << "[s]" << std::endl;
+        start = get_time_sec();
         // Compute Rp
         DiagBlockMatrix Rp = -F[0] - X;
         for(int i = 0; i < m; i++) Rp += F[i+1] * x(i);
         // Compute Rc
-        Real beta = isFeasible(epsilon1) ? betaStar : betaBar;
-        DiagBlockMatrix Rc = beta * mu * BlockIdentity(BlockSizes) - (X * Y);
+        Real beta_p = isFeasible(epsilon1) ? 0 : betaBar;
+        DiagBlockMatrix Rc_p = beta_p * mu * BlockIdentity(BlockSizes) - (X * Y);
+        end = get_time_sec();
+        std::cout << "2 : " << end - start << "[s]" << std::endl;
+        start = get_time_sec();
         // Compute d
         VectorXR d(m);
         for(int i = 0; i < m; i++) d(i) = c(i) - HSinner(F[i+1], Y);
         // Compute r
-        VectorXR r(m);
+        VectorXR r_p(m);
+        DiagBlockMatrix right_p = Xinv * (Rc_p - Rp * Y);
         for(int i = 0; i < m; i++){
             DiagBlockMatrix left = F[i+1];
-            DiagBlockMatrix right = Xinv * (Rc - Rp * Y);
+            r_p(i) = -d(i) + HSinner(left, right_p);
+        }
+        end = get_time_sec();
+        std::cout << "3 : " << end - start << "[s]" << std::endl;
+        start = get_time_sec();
+        // Compute dx
+        Eigen::LDLT<MatrixXR> ldlt(B);
+        VectorXR dx_p = ldlt.solve(r_p);
+        end = get_time_sec();
+        std::cout << "4 : " << end - start << "[s]" << std::endl;
+        // Compute dX
+        DiagBlockMatrix dX_p = Rp;
+        for(int i = 0; i < m; i++) dX_p += F[i+1] * dx_p(i);
+        // Compute \tilde{dY}
+        DiagBlockMatrix dY_tilde_p = Xinv * (Rc_p - dX_p * Y);
+        // Compute dY
+        DiagBlockMatrix dY_p = (dY_tilde_p + dY_tilde_p.transpose()) * (Real(1) / Real(2));        
+
+    //=======================================================================
+    // STEP2-1 : Compute Length
+    //=======================================================================
+        Real alpha_p_pred = compute_length(X, dX_p);
+        Real alpha_d_pred = compute_length(Y, dY_p);
+
+
+//===========================================================================
+// STEP2 : Corrector Step
+//===========================================================================
+        Real beta = HSinner(X + alpha_p_pred * dX_p, Y + alpha_d_pred * dY_p) / HSinner(X, Y);
+        Real beta_c;
+        if(beta <= Real(1)) {
+            if(isFeasible(epsilon1)) beta_c = max(betaStar, beta*beta);
+            else                     beta_c = max(betaBar, beta*beta);
+        } else {
+                                     beta_c = Real(1);
+        }
+        // Compute Rc
+        DiagBlockMatrix Rc = beta_c * mu * BlockIdentity(BlockSizes) - (X * Y) - (dX_p * dY_p);
+        // Compute r
+        VectorXR r(m);
+        DiagBlockMatrix right = Xinv * (Rc - Rp * Y);
+        for(int i = 0; i < m; i++){
+            DiagBlockMatrix left = F[i+1];
             r(i) = -d(i) + HSinner(left, right);
         }
         // Compute dx
@@ -318,27 +395,14 @@ VectorXR SDP(
         // Compute \tilde{dY}
         DiagBlockMatrix dY_tilde = Xinv * (Rc - dX * Y);
         // Compute dY
-        DiagBlockMatrix dY = (dY_tilde + dY_tilde.transpose()) * Real(0.5);
+        DiagBlockMatrix dY = (dY_tilde + dY_tilde.transpose()) * (Real(1) / Real(2));        
+
+    //=======================================================================
+    // STEP2-1 : Compute Length
+    //=======================================================================
+        Real alpha_p = compute_length(X, dX);
+        Real alpha_d = compute_length(Y, dY);
         
-
-//===========================================================================
-// STEP3 : Step Length
-//===========================================================================
-        // Compute α_p
-        Real alpha_p;
-        DiagBlockMatrix L_X = X.cholesky_decomposition();
-        DiagBlockMatrix S_X = L_X.inverse() * dX * L_X.inverse().transpose();
-        Real lambda_min_X = S_X.compute_eigenvalues().front();
-        if(lambda_min_X >= 0) alpha_p = 1.0;
-        else                  alpha_p = min(Real(1.0), -1.0 / lambda_min_X);
-        // Compute α_d
-        Real alpha_d;
-        DiagBlockMatrix L_Y = Y.cholesky_decomposition();
-        DiagBlockMatrix S_Y = L_Y.inverse() * dY * L_Y.inverse().transpose();
-        Real lambda_min_Y = S_Y.compute_eigenvalues().front();
-        if(lambda_min_Y >= 0) alpha_d = 1.0;
-        else                  alpha_d = min(Real(1.0), -1.0 / lambda_min_Y);
-
 
 //===========================================================================
 // STEP3' : Output history
@@ -352,7 +416,7 @@ VectorXR SDP(
             << std::setw(10) << RelativeGap()
             << std::setw(10) << alpha_p
             << std::setw(10) << alpha_d
-            << std::setw(10)  << beta
+            << std::setw(10)  << beta_c
             << std::endl;
         }
 
@@ -363,8 +427,11 @@ VectorXR SDP(
         x += gamma * alpha_p * dx;
         X += gamma * alpha_p * dX;
         Y += gamma * alpha_d * dY;
-        mu = HSinner(X, Y) / n;
+        mu = HSinner(X, Y) / Real(n);
         NumIterations++;
+
+        // std::cout << X.compute_eigenvalues().front() << std::endl;
+        // std::cout << Y.compute_eigenvalues().front() << std::endl;
     }
 
     return x;

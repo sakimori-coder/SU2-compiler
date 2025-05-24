@@ -65,36 +65,36 @@ std::pair<Real, std::vector<Real>> optimize_distribution(const std::vector<SU2>&
     VectorXR c = VectorXR::Zero(m);
     c(0) = c(1) = c(2) = c(3) = Real(0.5);
 
-    int NumBlocks = 3 + N;
+    int NumBlocks = 4;
     std::vector<int> BlockSizes(NumBlocks);
-    BlockSizes[0] = 4;                                // S >= 0
-    BlockSizes[1] = 4;                                // S >= J(U - \sum p(x)U_x)
-    for(int i = 0; i < N; i++) BlockSizes[2+i] = 1;   // p(x) >= 0
-    BlockSizes[2+N] = 1;                              // \sum p(x) <= 1
+    BlockSizes[0] = 4;      // S >= 0
+    BlockSizes[1] = 4;      // S >= J(U - \sum p(x)U_x)
+    BlockSizes[2] = -N;     // p(x) >= 0
+    BlockSizes[3] = -1;   // \sum p(x) <= 1
 
     std::vector<std::vector<MatrixXR>> Fmat(m+1, std::vector<MatrixXR>(NumBlocks));
 
     // Set F0
     Fmat[0][0] = Matrix4R::Zero();
     Fmat[0][1] = V_CJMagicBasis;
-    for(int i = 0; i < N; i++) Fmat[0][2+i] = Matrix1R::Zero();
-    Fmat[0][2+N] = -Matrix1R::Identity();
+    Fmat[0][2] = VectorXR::Zero(N);
+    Fmat[0][3] =-VectorXR::Ones(1);
 
     // Set F1~F10
     for(int i = 1; i <= 10; i++) {
         Fmat[i][0] = SymMat_basis[i-1];
         Fmat[i][1] = SymMat_basis[i-1];
-        for(int j = 0; j < N; j++) Fmat[i][2+j] = Matrix1R::Zero();
-        Fmat[i][2+N] = Matrix1R::Zero();
+        Fmat[i][2] = VectorXR::Zero(N);
+        Fmat[i][3] = VectorXR::Zero(1);
     }
 
     // Set F11~Fm
     for(int i = 0; i < N; i++) {
         Fmat[i+11][0] = Matrix4R::Zero();
         Fmat[i+11][1] = availableU_CJMagicBasis[i];
-        for(int j = 0; j < N; j++) Fmat[i+11][2+j] = Matrix1R::Zero();
-        Fmat[i+11][2+i] = Matrix1R::Identity();
-        Fmat[i+11][2+N] = -Matrix1R::Identity();
+        Fmat[i+11][2] = VectorXR::Zero(N);
+        Fmat[i+11][2](i) = 1;
+        Fmat[i+11][3] =-VectorXR::Ones(1);
     }
 
     std::vector<sdp::DiagBlockMatrix> F;

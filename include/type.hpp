@@ -2,6 +2,7 @@
 
 #include <complex>
 #include <iostream>
+#include <chrono>
 #include <Eigen/Core>
 #include <gmpxx.h>
 #include <mpreal.h>
@@ -35,10 +36,10 @@ namespace su2compiler
     using Matrix4R = Eigen::Matrix<Real, 4, 4>;
     using Matrix8R = Eigen::Matrix<Real, 8, 8>;
 
-    // struct PrecInit {
-    //     PrecInit() { mpfr::mpreal::set_default_prec(256); }
-    // };
-    // inline static PrecInit _mpreal_prec_init;
+    struct PrecInit {
+        PrecInit() { mpfr::mpreal::set_default_prec(256); }
+    };
+    inline static PrecInit _mpreal_prec_init;
 
 
     // Define complex type
@@ -197,4 +198,10 @@ namespace Eigen::internal {
             return mpfr::mpreal(z.get_mpz_t(), su2compiler::PrecBits);                                    // NRVO でほぼゼロコピー
         }
     };
+}
+
+
+using namespace std::chrono;
+inline double get_time_sec(void){
+	return static_cast<double>(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count())/1000000000;
 }

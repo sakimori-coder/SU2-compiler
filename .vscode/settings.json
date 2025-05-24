@@ -92,6 +92,11 @@
         "*.ipp": "cpp",
         "hash_map": "cpp",
         "rope": "cpp",
-        "slist": "cpp"
+        "slist": "cpp",
+        "expected": "cpp",
+        "spanstream": "cpp",
+        "stacktrace": "cpp",
+        "format": "cpp",
+        "stdfloat": "cpp"
     }
 }

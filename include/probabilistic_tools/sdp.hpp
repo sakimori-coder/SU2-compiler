@@ -3,7 +3,9 @@
 # include <numeric>
 #include <utility>
 #include <vector>
+#include <variant>
 #include <Eigen/Core>
+#include <Eigen/Sparse>
 #include <Eigen/LU>
 #include "type.hpp"
 
@@ -12,6 +14,7 @@ namespace su2compiler
 namespace sdp
 {
 
+using MatrixVar = std::variant<MatrixXR, Eigen::SparseMatrix<Real>>;
 
 class DiagBlockMatrix
 {
@@ -27,23 +30,32 @@ public:
         M = _M;
         NumBlocks = M.size();
         BlockSizes.resize(NumBlocks);
-        for(int i = 0; i < M.size(); i++) {
-            if(_M[i].cols() != _M[i].rows()) {
+        for(int i = 0; i < NumBlocks; i++) {
+            if(_M[i].cols() == 1) {
+                BlockSizes[i] = -_M[i].rows();
+            } else if(_M[i].rows() == _M[i].cols()) {
+                BlockSizes[i] = _M[i].rows();
+            } else {
                 throw std::domain_error("DiagBlockMatrix() : each block matrix must be square matrix");
             }
-            BlockSizes[i] = _M[i].cols();
         }
-        TotalSize = std::reduce(BlockSizes.begin(), BlockSizes.end());
+        TotalSize = 0;
+        for(int size : BlockSizes) TotalSize += std::abs(size);
     }
 
     DiagBlockMatrix(const std::vector<int>& _BlockSizes) {
         NumBlocks = _BlockSizes.size();
         BlockSizes = _BlockSizes;
-        TotalSize = std::reduce(BlockSizes.begin(), BlockSizes.end());
-        for(int i = 0; i < NumBlocks; i++) M[i] = MatrixXR::Zero(BlockSizes[i], BlockSizes[i]);
+        TotalSize = 0;
+        for(int size : BlockSizes) TotalSize += std::abs(size);
+        for(int i = 0; i < NumBlocks; i++) {
+            if(BlockSizes[i] > 0) M[i] = MatrixXR::Zero(BlockSizes[i], BlockSizes[i]);
+            else                  M[i] = VectorXR::Zero(-BlockSizes[i]);
+        }
     }
 
     inline std::vector<int> structure() const noexcept { return BlockSizes; }
+    inline int get_TotalSize() const noexcept { return TotalSize; }
     MatrixXR to_DenseMatrix() const noexcept;
 
     DiagBlockMatrix transpose() const noexcept;

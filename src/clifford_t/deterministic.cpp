@@ -65,7 +65,7 @@ std::vector<U2Dzeta8> deterministic_synthesis_fixed_t(SU2 V, Real eps, UINT t) {
     std::vector<U2Dzeta8> U_list;
 #pragma omp parallel for
     for(auto sequence : CT_sequence) {
-        mpfr::mpreal::set_default_prec(256);
+        mpfr::mpreal::set_default_prec(PrecBits);
         
         U2Dzeta8 U_prime(sequence);
 

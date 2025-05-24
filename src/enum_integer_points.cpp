@@ -57,7 +57,7 @@ std::tuple<MatrixXI, MatrixXI> LLL(MatrixXR B, Real delta)
         for(int j = k-1; j >= 0; j--){
             if(abs(mu(k,j)) > 0.5){
                 Integer q = round_mpreal(mu(k,j));
-                Real q_real = Real(q.get_mpz_t(), PrecBits);
+                Real q_real = Real(q.get_mpz_t());
                 B.col(k) -= q_real * B.col(j);
                 U.col(k) -= q * U.col(j);
                 U_inv.row(j) += q * U_inv.row(k);
@@ -102,7 +102,7 @@ MatrixXR cholesky(const MatrixXR& A){
 
     for(int i = 0; i < N; i++){
         for(int j = 0; j <= i; j++){
-            Real sum(0, PrecBits);
+            Real sum(0);
             for(int k = 0; k < j; k++){
                 sum += L(i,k) * L(j,k);
             }
@@ -137,7 +137,7 @@ std::vector<VectorXI> EnumIntegerPoints(MatrixXR Q, VectorXR p, Real c)
         Q_inv_list[i] = Q_list[i].inverse();
 
         MatrixXR B = cholesky(Q_inv_list[i]).transpose();
-        auto [U_T, U_T_inv] = LLL(B, 0.75);
+        auto [U_T, U_T_inv] = LLL(B, Real(0.75));
         // if(i != 8) U_T = U_T_inv = MatrixXI::Identity(i,i);
         MatrixXI U = U_T.transpose();
         MatrixXI U_inv = U_T_inv.transpose();
@@ -189,7 +189,7 @@ std::vector<VectorXI> EnumIntegerPoints(MatrixXR Q, VectorXR p, Real c)
                 VectorXI xvec(N);
                 xvec(0) = x0;
                 
-                Real x0_real = Real(x0.get_mpz_t(), PrecBits);
+                Real x0_real = Real(x0.get_mpz_t());
                 VectorXR b = (x0_real - p(0)) * Q.col(0).tail(N-1);
                 Real next_c = c;
                 MatrixXR next_p = p.tail(N-1);
