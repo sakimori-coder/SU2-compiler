@@ -46,18 +46,18 @@ Matrix4R Choi_Jamiolkowski_MagicBasis(const Matrix2C& U) {
 std::pair<Real, std::vector<Real>> optimize_distribution(const std::vector<SU2>& availableU, SU2 V) {
     const int N = availableU.size();
 
-    std::vector<Matrix4R> availableU_CJMagicBasis;
+    std::vector<sdp::DenseMat> availableU_CJMagicBasis;
     for(auto U : availableU) availableU_CJMagicBasis.push_back(Choi_Jamiolkowski_MagicBasis(U.to_EigenMatrix()));
-    Matrix4R V_CJMagicBasis = Choi_Jamiolkowski_MagicBasis(V.to_EigenMatrix());
+    sdp::DenseMat V_CJMagicBasis = Choi_Jamiolkowski_MagicBasis(V.to_EigenMatrix());
 
-    std::vector<Matrix4R> SymMat_basis(10, Matrix4R::Zero());
-    for(int i = 0; i < 4; i++) SymMat_basis[i](i,i) = 1;
-    SymMat_basis[4](0,1) = SymMat_basis[4](1,0) = 1;
-    SymMat_basis[5](0,2) = SymMat_basis[5](2,0) = 1;
-    SymMat_basis[6](0,3) = SymMat_basis[6](3,0) = 1;
-    SymMat_basis[7](1,2) = SymMat_basis[7](2,1) = 1;
-    SymMat_basis[8](1,3) = SymMat_basis[8](3,1) = 1;
-    SymMat_basis[9](2,3) = SymMat_basis[9](3,2) = 1;
+    std::vector<sdp::SparseMat> SymMat_basis(10, sdp::SparseMat(4,4));
+    for(int i = 0; i < 4; i++) SymMat_basis[i].insert(i,i) = 1;
+    SymMat_basis[4].insert(0,1) = SymMat_basis[4].insert(1,0) = 1;
+    SymMat_basis[5].insert(0,2) = SymMat_basis[5].insert(2,0) = 1;
+    SymMat_basis[6].insert(0,3) = SymMat_basis[6].insert(3,0) = 1;
+    SymMat_basis[7].insert(1,2) = SymMat_basis[7].insert(2,1) = 1;
+    SymMat_basis[8].insert(1,3) = SymMat_basis[8].insert(3,1) = 1;
+    SymMat_basis[9].insert(2,3) = SymMat_basis[9].insert(3,2) = 1;
 
 
     // 変数の並び順は (Sの変数10個, 混合確率)
@@ -70,35 +70,36 @@ std::pair<Real, std::vector<Real>> optimize_distribution(const std::vector<SU2>&
     BlockSizes[0] = 4;      // S >= 0
     BlockSizes[1] = 4;      // S >= J(U - \sum p(x)U_x)
     BlockSizes[2] = -N;     // p(x) >= 0
-    BlockSizes[3] = -1;   // \sum p(x) <= 1
+    BlockSizes[3] = -1;     // \sum p(x) <= 1
 
-    std::vector<std::vector<MatrixXR>> Fmat(m+1, std::vector<MatrixXR>(NumBlocks));
+    std::vector<std::vector<sdp::MatVecVar>> F_Blocks(m+1, std::vector<sdp::MatVecVar>(NumBlocks));
 
     // Set F0
-    Fmat[0][0] = Matrix4R::Zero();
-    Fmat[0][1] = V_CJMagicBasis;
-    Fmat[0][2] = VectorXR::Zero(N);
-    Fmat[0][3] =-VectorXR::Ones(1);
+    F_Blocks[0][0] = sdp::SparseMat(4, 4);
+    F_Blocks[0][1] = V_CJMagicBasis;
+    F_Blocks[0][2] = sdp::SparseVec(N);
+    F_Blocks[0][3] = sdp::DenseVec(-VectorXR::Ones(1));
 
     // Set F1~F10
     for(int i = 1; i <= 10; i++) {
-        Fmat[i][0] = SymMat_basis[i-1];
-        Fmat[i][1] = SymMat_basis[i-1];
-        Fmat[i][2] = VectorXR::Zero(N);
-        Fmat[i][3] = VectorXR::Zero(1);
+        F_Blocks[i][0] = SymMat_basis[i-1];
+        F_Blocks[i][1] = SymMat_basis[i-1];
+        F_Blocks[i][2] = sdp::SparseVec(N);
+        F_Blocks[i][3] = sdp::DenseVec(VectorXR::Zero(1));
     }
 
     // Set F11~Fm
     for(int i = 0; i < N; i++) {
-        Fmat[i+11][0] = Matrix4R::Zero();
-        Fmat[i+11][1] = availableU_CJMagicBasis[i];
-        Fmat[i+11][2] = VectorXR::Zero(N);
-        Fmat[i+11][2](i) = 1;
-        Fmat[i+11][3] =-VectorXR::Ones(1);
+        F_Blocks[i+11][0] = sdp::SparseMat(4,4);
+        F_Blocks[i+11][1] = availableU_CJMagicBasis[i];
+        sdp::SparseVec e_i(N);
+        e_i.insert(i) = 1;
+        F_Blocks[i+11][2] = e_i;
+        F_Blocks[i+11][3] = sdp::DenseVec(-VectorXR::Ones(1));
     }
 
     std::vector<sdp::DiagBlockMatrix> F;
-    for(int i = 0; i <= m; i++) F.push_back(sdp::DiagBlockMatrix(Fmat[i]));
+    for(int i = 0; i <= m; i++) F.push_back(sdp::DiagBlockMatrix(F_Blocks[i]));
     Real lambda = 1e4;
     Real betaStar = 0.1;
     Real betaBar = 0.3;

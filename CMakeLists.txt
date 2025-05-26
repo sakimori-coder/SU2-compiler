@@ -14,6 +14,34 @@ find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
 
 
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    message(STATUS "ccache found-enabling")
+    set(CMAKE_C_COMPILER_LAUNCHER   "${CCACHE_PROGRAM}")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+endif()
+
+
+add_compile_options(
+    "$<$<CONFIG:DEBUG>:-O3;-g1;-fdiagnostics-show-template-tree;-fno-elide-type>"
+    "$<$<CONFIG:RELEASE>:-O3;-march=native;-DNDEBUG>"
+)
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_ok)
+
+if(ipo_ok)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE) # ThinLTO
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE        TRUE) # Full LTO
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_link_options(
+        -fuse-ld=mold                                     # mold が無ければ lld/gold
+        $<$<CONFIG:RelWithDebInfo>:-flto=thin>
+        $<$<CONFIG:Release>:-flto>
+    )
+endif()
 
 #----------------------------------------------------------------------
 # 外部モジュールのbuild

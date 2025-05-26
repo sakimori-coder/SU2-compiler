@@ -5,6 +5,7 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/LU>
+#include <Eigen/SparseCholesky>
 
 #include "type.hpp"
 
@@ -15,73 +16,160 @@ namespace sdp
 {
 
 
-MatrixXR DiagBlockMatrix::to_DenseMatrix() const noexcept {
-    MatrixXR DenseM = MatrixXR::Zero(TotalSize, TotalSize);
-    int START = 0;
+MatrixXR DiagBlockMatrix::to_DenseMatrix() const {
+    MatrixXR TotalMat = MatrixXR::Zero(TotalSize, TotalSize);
+    UINT START = 0;
+
     for(int i = 0; i < NumBlocks; i++){
-        if(BlockSizes[i] > 0) {
-            DenseM(Eigen::seqN(START, BlockSizes[i]), Eigen::seqN(START, BlockSizes[i])) = M[i];
-        } else {
-            for(int j = 0; j < -BlockSizes[i]; j++) DenseM(START+j, START+j) = M[i](j);
-        }
-        START += std::abs(BlockSizes[i]);
+        const UINT size = std::abs(BlockSizes[i]);
+
+        std::visit([&](auto const& blk) {
+            using T = std::decay_t<decltype(blk)>;
+            if constexpr (std::is_same_v<T, DenseMat>) {
+                TotalMat(Eigen::seqN(START, size), Eigen::seqN(START, size)) = blk;
+            }
+            else if constexpr (std::is_same_v<T, SparseMat>) {
+                TotalMat(Eigen::seqN(START, size), Eigen::seqN(START, size)) = blk.toDense();
+            }
+            else if constexpr (std::is_same_v<T, DenseVec>) {
+                TotalMat(Eigen::seqN(START, size), Eigen::seqN(START, size)) = blk.asDiagonal();
+            }
+            else if constexpr (std::is_same_v<T, SparseVec>) {
+                TotalMat(Eigen::seqN(START, size), Eigen::seqN(START, size)) = blk.toDense().asDiagonal();
+            }
+        }, Blocks[i]);
+
+        START += size;
     }
-    return DenseM;
+    return TotalMat;
 }
 
-DiagBlockMatrix DiagBlockMatrix::transpose() const noexcept {
-    std::vector<MatrixXR> M_transpose(NumBlocks);
+DiagBlockMatrix DiagBlockMatrix::transpose() const {
+    std::vector<MatVecVar> Blocks_transpose(NumBlocks);
+
     for(int i = 0; i < NumBlocks; i++) {
-        if(BlockSizes[i] > 0) M_transpose[i] = M[i].transpose();
-        else                  M_transpose[i] = M[i];
+        std::visit([&](auto const& blk) {
+            using T = std::decay_t<decltype(blk)>;
+            if constexpr (std::is_same_v<T, DenseMat>) {
+                Blocks_transpose[i] = DenseMat(blk.transpose());
+            }
+            else if constexpr (std::is_same_v<T, SparseMat>) {
+                Blocks_transpose[i] = SparseMat(blk.transpose());
+            }
+            else if constexpr (std::is_same_v<T, DenseVec>) {
+                Blocks_transpose[i] = blk;
+            }
+            else if constexpr (std::is_same_v<T, SparseVec>) {
+                Blocks_transpose[i] = blk;
+            }
+        }, Blocks[i]);
     }
-    return DiagBlockMatrix(M_transpose);
+    return DiagBlockMatrix(std::move(Blocks_transpose));
 }
 
 DiagBlockMatrix DiagBlockMatrix::inverse() const {
-    std::vector<MatrixXR> M_inv(NumBlocks);
+    std::vector<MatVecVar> Blocks_inv(NumBlocks);
+
     for(int i = 0; i < NumBlocks; i++) {
-        if(BlockSizes[i] > 0) {
-            M_inv[i] = M[i].inverse();
-        } else {
-            M_inv[i] = M[i].cwiseInverse();
-        }
+        std::visit([&](auto const& blk) {
+            using T = std::decay_t<decltype(blk)>;
+            if constexpr (std::is_same_v<T, DenseMat>) {
+                Blocks_inv[i] = blk.inverse().eval();
+            }
+            else if constexpr (std::is_same_v<T, SparseMat>) {
+                Blocks_inv[i] = blk.toDense().inverse().eval();
+            }
+            else if constexpr (std::is_same_v<T, DenseVec>) {
+                Blocks_inv[i] = blk.cwiseInverse().eval();
+            }
+            else if constexpr (std::is_same_v<T, SparseVec>) {
+                Blocks_inv[i] = blk.toDense().cwiseInverse().eval();
+            }
+        }, Blocks[i]);
     }
-    return DiagBlockMatrix(M_inv);
+    return DiagBlockMatrix(std::move(Blocks_inv));
 }
 
-Real DiagBlockMatrix::maxAbsCoeff() const noexcept {
-    Real ret = 0.0;
+Real DiagBlockMatrix::maxAbsCoeff() const {
+    Real ret(0);
+
     for(int i = 0; i < NumBlocks; i++) {
-        ret = max(ret, M[i].array().abs().maxCoeff());
+        std::visit([&](auto const& blk) {
+            using T = std::decay_t<decltype(blk)>;
+            if constexpr (std::is_same_v<T, DenseMat>) {
+                ret = max(ret, blk.cwiseAbs().maxCoeff());
+            }
+            else if constexpr (std::is_same_v<T, SparseMat>) {
+                ret = max(ret, blk.toDense().cwiseAbs().maxCoeff());
+            }
+            else if constexpr (std::is_same_v<T, DenseVec>) {
+                ret = max(ret, blk.cwiseAbs().maxCoeff());
+            }
+            else if constexpr (std::is_same_v<T, SparseVec>) {
+                ret = max(ret, blk.toDense().cwiseAbs().maxCoeff());
+            }
+        }, Blocks[i]);
     }
     return ret;
 }
 
-DiagBlockMatrix DiagBlockMatrix::cholesky_decomposition() const {
-    std::vector<MatrixXR> L(NumBlocks);
-    for(int i = 0; i < NumBlocks; i++){
-        if(BlockSizes[i] > 0){
-            Eigen::LLT<MatrixXR> llt(M[i]);
-            L[i] = llt.matrixL();
-        } else {
-            L[i] = M[i].cwiseSqrt();
-        }
+DiagBlockMatrix DiagBlockMatrix::LLT() const {
+    std::vector<MatVecVar> Blocks_L(NumBlocks);
+
+    for(int i = 0; i < NumBlocks; i++) {
+        std::visit([&](auto const& blk) {
+            using T = std::decay_t<decltype(blk)>;
+            if constexpr (std::is_same_v<T, DenseMat>) {
+                Eigen::LLT<DenseMat> llt(blk);
+                if(llt.info() != Eigen::Success) {
+                    throw std::runtime_error("LLT() : block matrix is not SPD");
+                }
+                Blocks_L[i] = DenseMat(llt.matrixL());
+            }
+            else if constexpr (std::is_same_v<T, SparseMat>) {
+                Eigen::SimplicialLLT<SparseMat> llt(blk);
+                if(llt.info() != Eigen::Success) {
+                    throw std::runtime_error("LLT() : block matrix is not SPD");
+                }
+                Blocks_L[i] = SparseMat(llt.matrixL());
+            }
+            else if constexpr (std::is_same_v<T, DenseVec>) {
+                Blocks_L[i] = blk.cwiseSqrt().eval();
+            }
+            else if constexpr (std::is_same_v<T, SparseVec>) {
+                Blocks_L[i] = blk.cwiseSqrt().eval();
+            }
+        }, Blocks[i]);
     }
-    return DiagBlockMatrix(L);
+    return DiagBlockMatrix(std::move(Blocks_L));
 }
 
 std::vector<Real> DiagBlockMatrix::compute_eigenvalues() const {
     std::vector<Real> ret;
+
     for(int i = 0; i < NumBlocks; i++){
-        if(BlockSizes[i] > 0) {
-            Eigen::SelfAdjointEigenSolver<MatrixXR> es(M[i]);
-            ret.insert(ret.end(), es.eigenvalues().data(), 
-                                  es.eigenvalues().data() + es.eigenvalues().size());
-        } else {
-            ret.insert(ret.end(), M[i].data(), M[i].data() + M[i].size());
-        }
+        UINT size = std::abs(BlockSizes[i]);
+
+        std::visit([&](auto const& blk) {
+            using T = std::decay_t<decltype(blk)>;
+            if constexpr (std::is_same_v<T, DenseMat>) {
+                auto eigs = blk.eigenvalues().real().eval();
+                ret.insert(ret.end(), eigs.data(), eigs.data() + eigs.size());
+            }
+            else if constexpr (std::is_same_v<T, SparseMat>) {
+                auto eigs = blk.toDense().eigenvalues().real().eval();
+                ret.insert(ret.end(), eigs.data(), eigs.data() + eigs.size());
+            }
+            else if constexpr (std::is_same_v<T, DenseVec>) {
+                ret.insert(ret.end(), blk.data(), blk.data() + size);
+            }
+            else if constexpr (std::is_same_v<T, SparseVec>) {
+                DenseVec blk_dense = blk.toDense();
+                ret.insert(ret.end(), blk_dense.data(), blk_dense.data() + size);
+            }
+        }, Blocks[i]);
     }
+
     std::sort(ret.begin(), ret.end());
     return ret;
 }
@@ -89,11 +177,31 @@ std::vector<Real> DiagBlockMatrix::compute_eigenvalues() const {
 DiagBlockMatrix& DiagBlockMatrix::operator+=(const DiagBlockMatrix& r)
 {
     if(BlockSizes != r.BlockSizes) {
-        throw std::domain_error("DiagBlockMatrix::operator+= : operands must share the same block structure");
+        throw std::domain_error("DiagBlockMatrix::operator+= : block structure mismatch");
     }
 
     for(int i = 0; i < NumBlocks; i++){
-        M[i] += r.M[i];
+        Blocks[i] = std::visit([&](const auto& blk1, const auto& blk2) -> MatVecVar {
+            using T1 = std::decay_t<decltype(blk1)>;
+            using T2 = std::decay_t<decltype(blk2)>;
+            
+            if constexpr (std::is_same_v<T1, SparseMat> && std::is_same_v<T2, SparseMat>) {
+                return SparseMat(blk1 + blk2);
+            }
+            else if constexpr (std::is_same_v<T1, SparseVec> && std::is_same_v<T2, SparseVec>) {
+                return SparseVec(blk1 + blk2);
+            }
+            else if constexpr (std::is_same_v<T1, SparseVec>) {
+                return DenseVec(blk1.toDense() + blk2);
+            }
+            else if constexpr (std::is_same_v<T2, SparseVec>) {
+                return DenseVec(blk1 + blk2.toDense());
+            }
+            else {
+                if(BlockSizes[i] > 0) return DenseMat(blk1 + blk2);
+                else                  return DenseVec(blk1 + blk2);
+            }
+        }, Blocks[i], r.Blocks[i]);
     }
     return *this;
 }
@@ -101,11 +209,31 @@ DiagBlockMatrix& DiagBlockMatrix::operator+=(const DiagBlockMatrix& r)
 DiagBlockMatrix& DiagBlockMatrix::operator-=(const DiagBlockMatrix& r)
 {
     if(BlockSizes != r.BlockSizes) {
-        throw std::domain_error("DiagBlockMatrix::operator-= : operands must share the same block structure");
+        throw std::domain_error("DiagBlockMatrix::operator-= : block structure mismatch");
     }
 
     for(int i = 0; i < NumBlocks; i++){
-        M[i] -= r.M[i];
+        Blocks[i] = std::visit([&](const auto& blk1, const auto& blk2) -> MatVecVar {
+            using T1 = std::decay_t<decltype(blk1)>;
+            using T2 = std::decay_t<decltype(blk2)>;
+            
+            if constexpr (std::is_same_v<T1, SparseMat> && std::is_same_v<T2, SparseMat>) {
+                return SparseMat(blk1 - blk2);
+            }
+            else if constexpr (std::is_same_v<T1, SparseVec> && std::is_same_v<T2, SparseVec>) {
+                return SparseVec(blk1 - blk2);
+            }
+            else if constexpr (std::is_same_v<T1, SparseVec>) {
+                return DenseVec(blk1.toDense() - blk2);
+            }
+            else if constexpr (std::is_same_v<T2, SparseVec>) {
+                return DenseVec(blk1 - blk2.toDense());
+            }
+            else {
+                if(BlockSizes[i] > 0) return DenseMat(blk1 - blk2);
+                else                  return DenseVec(blk1 - blk2);
+            }
+        }, Blocks[i], r.Blocks[i]);
     }
     return *this;
 }
@@ -117,25 +245,65 @@ DiagBlockMatrix& DiagBlockMatrix::operator*=(const DiagBlockMatrix& r)
     }
 
     for(int i = 0; i < NumBlocks; i++){
-        if(BlockSizes[i] > 0) M[i] *= r.M[i];
-        else                  M[i] = M[i].cwiseProduct(r.M[i]);
+        Blocks[i] = std::visit([&](const auto& blk1, const auto& blk2) -> MatVecVar {
+            using T1 = std::decay_t<decltype(blk1)>;
+            using T2 = std::decay_t<decltype(blk2)>;
+            if constexpr (std::is_same_v<T1, SparseMat> && std::is_same_v<T2, SparseMat>) {
+                return SparseMat(blk1 * blk2);
+            }
+            else if constexpr (std::is_same_v<T1, SparseMat>) {
+                DenseMat ret_dense =  blk1 * blk2;
+                return SparseMat(ret_dense.sparseView(1e-20));
+            }
+            else if constexpr (std::is_same_v<T2, SparseMat>) {
+                DenseMat ret_dense =  blk1 * blk2;
+                return SparseMat(ret_dense.sparseView(1e-20));
+            }
+            else if constexpr (std::is_same_v<T1, SparseVec> && std::is_same_v<T2, SparseVec>) {
+                return SparseVec(blk1.cwiseProduct(blk2));
+            }
+            else if constexpr (std::is_same_v<T1, SparseVec>) {
+                return SparseVec(blk1.cwiseProduct(blk2));
+            }
+            else if constexpr (std::is_same_v<T2, SparseVec>) {
+                return SparseVec(blk2.cwiseProduct(blk1));
+            }
+            else if constexpr (std::is_same_v<T1, DenseVec>) {
+                return DenseVec(blk1.cwiseProduct(blk2));
+            }
+            else {
+                return DenseMat(blk1 * blk2);
+            }
+        }, Blocks[i], r.Blocks[i]);
     }
+
     return *this;
 }
 
 DiagBlockMatrix& DiagBlockMatrix::operator*=(const Real& r) noexcept
 {
-    for(int i = 0; i < NumBlocks; i++){
-        M[i] *= r;
+    for(int i = 0; i < NumBlocks; i++) {
+        Blocks[i] = std::visit([&](const auto& blk) -> MatVecVar {
+            using T = std::decay_t<decltype(blk)>;
+            return T(r * blk);
+        }, Blocks[i]);
     }
+
     return *this;
 }
 
 DiagBlockMatrix DiagBlockMatrix::operator-() const noexcept
 {
-    std::vector<MatrixXR> minusM = M;
-    for(int i = 0; i < NumBlocks; i++) minusM[i] = -minusM[i];
-    return DiagBlockMatrix(minusM);
+    std::vector<MatVecVar> Blocks_minus(NumBlocks);
+
+    for(int i = 0; i < NumBlocks; i++) {
+        std::visit([&](const auto& blk) {
+            using T = std::decay_t<decltype(blk)>;
+            Blocks_minus[i] = T(-blk);
+        }, Blocks[i]);
+    }
+
+    return DiagBlockMatrix(std::move(Blocks_minus));
 }
 
 std::ostream& operator<<(std::ostream& os, const DiagBlockMatrix& x)
@@ -148,25 +316,49 @@ std::ostream& operator<<(std::ostream& os, const DiagBlockMatrix& x)
     Eigen::IOFormat fmt(4, 0, "  ", "\n", " ", " ", "", "");
 
     for(int i = 0; i < x.NumBlocks; i++) {
-        const auto& mat = x.M[i];
-        os << "[Block " << i+1 << "] size = "
-           << mat.rows() << " x " << mat.cols() << '\n'
-           << mat.format(fmt) << std::endl;
+        UINT size = std::abs(x.BlockSizes[i]);
+        os << "[Block " << i+1 << "]" << '\n';
+
+        std::visit([&](const auto& blk) {
+            using T = std::decay_t<decltype(blk)>;
+            if constexpr (std::is_same_v<T, DenseMat>) {
+                os << "Type = DenseMatrix" << '\n'
+                   << "Size = " << size << '\n';
+                std::cout << blk.format(fmt) << std::endl;
+            }
+            else if constexpr (std::is_same_v<T, SparseMat>) {
+                os << "Type = SparseMatrix" << '\n'
+                   << "Size = " << size << '\n';
+                std::cout << blk.toDense().format(fmt) << std::endl;
+            }
+            else if constexpr (std::is_same_v<T, DenseVec>) {
+                os << "Type = DenseVector" << '\n'
+                   << "Size = " << size << '\n';
+                std::cout << blk.transpose().format(fmt) << std::endl;
+            }
+            else if constexpr (std::is_same_v<T, SparseVec>) {
+                os << "Type = SparseVector" << '\n'
+                   << "Size = " << size << '\n';
+                std::cout << blk.toDense().transpose().format(fmt) << std::endl;
+            }
+        }, x.Blocks[i]);
+
         if(i != x.NumBlocks-1) os << std::endl;
     }
     os << "-------------------------------------------";
     return os;
-    return os;
 }   
 
-DiagBlockMatrix BlockIdentity(const std::vector<int>& structure)
+DiagBlockMatrix BlockIdentity(const std::vector<int>& BlockSizes)
 {
-    std::vector<MatrixXR> I;
-    for(int size : structure){
-        if(size > 0) I.push_back(MatrixXR::Identity(size, size));
-        else         I.push_back(VectorXR::Ones(-size));
+    UINT NumBlocks = BlockSizes.size();
+    std::vector<MatVecVar> Blocks_I(NumBlocks);
+    for(int i = 0; i < NumBlocks; i++) {
+        UINT size = std::abs(BlockSizes[i]);
+        if(BlockSizes[i] > 0) Blocks_I[i] = DenseMat(MatrixXR::Identity(size, size));
+        else                  Blocks_I[i] = DenseVec(VectorXR::Ones(size));
     }
-    return DiagBlockMatrix(I);
+    return DiagBlockMatrix(std::move(Blocks_I));
 }
 
 Real HSinner(const DiagBlockMatrix& A, const DiagBlockMatrix& B)
@@ -174,12 +366,22 @@ Real HSinner(const DiagBlockMatrix& A, const DiagBlockMatrix& B)
     if(A.BlockSizes != B.BlockSizes){
         throw std::domain_error("HSinner() : operands must share the same block structure");
     }
-    Real ret = 0.0;
+
+    Real ret(0);
     for(int i = 0; i < A.NumBlocks; i++){
-        const MatrixXR mat1 = A.M[i];
-        const MatrixXR mat2 = B.M[i];
-        ret += mat1.cwiseProduct(mat2).sum();
+        std::visit([&](const auto& blk1, const auto& blk2) {
+            using T1 = std::decay_t<decltype(blk1)>;
+            using T2 = std::decay_t<decltype(blk2)>;
+
+            if constexpr (std::is_same_v<T2, SparseMat> || std::is_same_v<T2, SparseVec>) {
+                ret += blk2.cwiseProduct(blk1).sum();
+            }
+            else {
+                ret += blk1.cwiseProduct(blk2).sum();
+            }
+        }, A.Blocks[i], B.Blocks[i]);
     }
+
     return ret;
 }
 
@@ -188,17 +390,26 @@ bool isSymmetric(const MatrixXR& A, Real tol = 1e-20) {
 }
 
 bool isSymmetric(const DiagBlockMatrix& A, Real tol = 1e-20) {
+    bool ret = true;
     for(int i = 0; i < A.NumBlocks; i++) {
-        if(A.BlockSizes[i] > 0 && !isSymmetric(A.M[i])) return false;
+        std::visit([&](auto const& blk) {
+            using T = std::decay_t<decltype(blk)>;
+            if constexpr (std::is_same_v<T, DenseMat>) {
+                if(!isSymmetric(blk)) ret = false;
+            }
+            else if constexpr (std::is_same_v<T, SparseMat>) {
+                if(!isSymmetric(blk.toDense())) ret = false;
+            }
+        }, A.Blocks[i]);
     }
-    return true;
+    return ret;
 }
 
 
 // α = max{ λ \in [0,1] | X + λdX >= O }
 Real compute_length(const DiagBlockMatrix& X, const DiagBlockMatrix& dX) {
     Real alpha;
-    DiagBlockMatrix L = X.cholesky_decomposition();
+    DiagBlockMatrix L = X.LLT();
     DiagBlockMatrix S = L.inverse() * dX * L.inverse().transpose();
     Real lambda_min = S.compute_eigenvalues().front();
     if(lambda_min >= 0) alpha = 1.0;
@@ -220,7 +431,7 @@ VectorXR SDP(
     bool OUTPUT_HISTORY = false) 
 {
     int m = c.rows();   // F = {F_0, F_1, ... , F_m}
-    std::vector<int> BlockSizes = F[0].structure();
+    std::vector<int> BlockSizes = F[0].get_BlockSizes();
     int n = F[0].get_TotalSize();
 
     for(int i = 0; i <= m; i++) {
@@ -310,16 +521,19 @@ VectorXR SDP(
     //=======================================================================
         // Compute Xinv
         double start, end;
-        start = get_time_sec();
         DiagBlockMatrix Xinv = X.inverse();
         // Compute B
+        start = get_time_sec();
         MatrixXR B(m,m);
         for(int i = 0; i < m; i++){
+            // start = get_time_sec();
             DiagBlockMatrix left = Xinv * F[i+1] * Y;
+            end = get_time_sec();
+            // std::cout << "HSinner : " << end - start << "[s]" << std::endl;
             // DiagBlockMatrix left = F[i+1];
             for(int j = 0; j <= i; j++){
-                DiagBlockMatrix right = F[j+1];
-                B(i,j) = B(j,i) = HSinner(left, right);
+                // DiagBlockMatrix right = F[j+1];
+                B(i,j) = B(j,i) = HSinner(left, F[j+1]);
             }
         }
         end = get_time_sec();
@@ -352,6 +566,7 @@ VectorXR SDP(
         VectorXR dx_p = ldlt.solve(r_p);
         end = get_time_sec();
         std::cout << "4 : " << end - start << "[s]" << std::endl;
+        start = get_time_sec();
         // Compute dX
         DiagBlockMatrix dX_p = Rp;
         for(int i = 0; i < m; i++) dX_p += F[i+1] * dx_p(i);
@@ -359,12 +574,17 @@ VectorXR SDP(
         DiagBlockMatrix dY_tilde_p = Xinv * (Rc_p - dX_p * Y);
         // Compute dY
         DiagBlockMatrix dY_p = (dY_tilde_p + dY_tilde_p.transpose()) * (Real(1) / Real(2));        
+        end = get_time_sec();
+        std::cout << "5 : " << end - start << "[s]" << std::endl;
 
     //=======================================================================
     // STEP2-1 : Compute Length
     //=======================================================================
+        start = get_time_sec();
         Real alpha_p_pred = compute_length(X, dX_p);
         Real alpha_d_pred = compute_length(Y, dY_p);
+        end = get_time_sec();
+        // std::cout << "6 : " << end - start << "[s]" << std::endl;
 
 
 //===========================================================================

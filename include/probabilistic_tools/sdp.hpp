@@ -14,54 +14,63 @@ namespace su2compiler
 namespace sdp
 {
 
-using MatrixVar = std::variant<MatrixXR, Eigen::SparseMatrix<Real>>;
+using DenseMat  = MatrixXR;
+using SparseMat = Eigen::SparseMatrix<Real>;
+using DenseVec  = VectorXR;
+using SparseVec = Eigen::SparseVector<Real>;
+using MatVecVar = std::variant<DenseMat,
+                               SparseMat,
+                               DenseVec,
+                               SparseVec>;
+
+
+
 
 class DiagBlockMatrix
 {
 private:
-    int TotalSize;
-    int NumBlocks;
-    std::vector<int> BlockSizes;
-    std::vector<MatrixXR> M;
+    std::vector<MatVecVar> Blocks;
+    std::vector<int>       BlockSizes;
+    UINT                   NumBlocks = 0;
+    UINT                   TotalSize = 0;
+
     
 
 public:
-    DiagBlockMatrix(const std::vector<MatrixXR>& _M) {
-        M = _M;
-        NumBlocks = M.size();
+    DiagBlockMatrix(const std::vector<MatVecVar>& _Blocks) {
+        Blocks = _Blocks;
+        NumBlocks = Blocks.size();
         BlockSizes.resize(NumBlocks);
+
         for(int i = 0; i < NumBlocks; i++) {
-            if(_M[i].cols() == 1) {
-                BlockSizes[i] = -_M[i].rows();
-            } else if(_M[i].rows() == _M[i].cols()) {
-                BlockSizes[i] = _M[i].rows();
-            } else {
-                throw std::domain_error("DiagBlockMatrix() : each block matrix must be square matrix");
-            }
+            std::visit([&](const auto& blk) {
+                using T = std::decay_t<decltype(blk)>;
+
+                if constexpr (std::is_same_v<T, DenseMat> || std::is_same_v<T, SparseMat>) {
+                    if(blk.rows() != blk.cols()) {
+                        throw std::domain_error("DiagBlockMatrix() : block matrix must be square matrix");
+                    }
+                    BlockSizes[i] = blk.rows();
+                }
+                else if constexpr (std::is_same_v<T, DenseVec> || std::is_same_v<T, SparseVec>) {
+                    BlockSizes[i] = -blk.size();
+                }
+            }, Blocks[i]);
         }
+
         TotalSize = 0;
         for(int size : BlockSizes) TotalSize += std::abs(size);
     }
 
-    DiagBlockMatrix(const std::vector<int>& _BlockSizes) {
-        NumBlocks = _BlockSizes.size();
-        BlockSizes = _BlockSizes;
-        TotalSize = 0;
-        for(int size : BlockSizes) TotalSize += std::abs(size);
-        for(int i = 0; i < NumBlocks; i++) {
-            if(BlockSizes[i] > 0) M[i] = MatrixXR::Zero(BlockSizes[i], BlockSizes[i]);
-            else                  M[i] = VectorXR::Zero(-BlockSizes[i]);
-        }
-    }
 
-    inline std::vector<int> structure() const noexcept { return BlockSizes; }
-    inline int get_TotalSize() const noexcept { return TotalSize; }
-    MatrixXR to_DenseMatrix() const noexcept;
-
-    DiagBlockMatrix transpose() const noexcept;
+    inline std::vector<MatVecVar> get_Blocks() const noexcept { return Blocks; }
+    inline std::vector<int> get_BlockSizes() const noexcept { return BlockSizes; }
+    inline UINT get_TotalSize() const noexcept { return TotalSize; }
+    MatrixXR to_DenseMatrix() const;
+    DiagBlockMatrix transpose() const;
     DiagBlockMatrix inverse() const;
-    Real maxAbsCoeff() const noexcept;
-    DiagBlockMatrix cholesky_decomposition() const;
+    Real maxAbsCoeff() const;
+    DiagBlockMatrix LLT() const;
     std::vector<Real> compute_eigenvalues() const;
 
 
