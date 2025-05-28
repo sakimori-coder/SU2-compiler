@@ -536,6 +536,7 @@ VectorXR SDP(
                 B(i,j) = B(j,i) = HSinner(left, F[j+1]);
             }
         }
+        // std::cout << std::setprecision(4) << B << std::endl;
         end = get_time_sec();
         std::cout << "1 : " << end - start << "[s]" << std::endl;
         start = get_time_sec();
@@ -584,7 +585,7 @@ VectorXR SDP(
         Real alpha_p_pred = compute_length(X, dX_p);
         Real alpha_d_pred = compute_length(Y, dY_p);
         end = get_time_sec();
-        // std::cout << "6 : " << end - start << "[s]" << std::endl;
+        std::cout << "6 : " << end - start << "[s]" << std::endl;
 
 
 //===========================================================================

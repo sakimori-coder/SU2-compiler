@@ -24,7 +24,7 @@ TEST(mixing_su2, Choi_Jamiolkowski_MagicBasis) {
 
 
 TEST(mixing_su2, optimize_distribution) {
-    mpfr::mpreal::set_default_prec(256);
+    mpfr::mpreal::set_default_prec(300);
     SU2 V = su2compiler::random_unitary();
     int N = 50;
     std::vector<SU2> availableU(N);
