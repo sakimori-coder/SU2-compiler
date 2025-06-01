@@ -8,6 +8,7 @@ set_target_properties(su2compiler PROPERTIES
 target_include_directories(su2compiler PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 target_link_libraries(su2compiler PUBLIC
+    QD::QD
     GMP::GMP
     GMPXX::GMPXX
     MPFR::MPFR

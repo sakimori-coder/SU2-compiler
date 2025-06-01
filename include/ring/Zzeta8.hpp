@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "type.hpp"
+#include "core/type.hpp"
 #include "Zroot2.hpp"
 
 
@@ -70,7 +70,8 @@ struct Zzeta8
         return {a, -b, c, -d};
     }
 
-    [[nodiscard]] Complex to_Complex() const;
+    template <typename T>
+    [[nodiscard]] std::complex<T> toComplex() const;
 
     [[nodiscard]] bool divisible(const Integer& r) const;
     [[nodiscard]] bool divisible(const Zroot2& r) const;

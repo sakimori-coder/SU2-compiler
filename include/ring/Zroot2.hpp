@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "type.hpp"
+#include "core/type.hpp"
 
 namespace su2compiler {
 namespace ring {
@@ -46,7 +46,8 @@ struct Zroot2
         return {a, -b};
     }
 
-    [[nodiscard]] Real to_Real() const noexcept;
+    template <typename T>
+    [[nodiscard]] T toReal() const noexcept;
 
     [[nodiscard]] bool divisible(const Integer& r) const;
     [[nodiscard]] bool divisible(const Zroot2& r) const;

@@ -1,8 +1,9 @@
 #pragma once
 
 #include <iostream>
+#include <Eigen/Core>
 
-#include "type.hpp"
+#include "core/type.hpp"
 #include "Zroot2.hpp"
 #include "Zzeta8.hpp"
 
@@ -15,7 +16,7 @@ namespace ring {
 //  Lightweight value type for an algebraic integer in
 //  the mixed cyclotomic–quaternionic ring
 //
-//      ℤ[ζ₈ , j ζ₈]  ≔  { a₁ + b₁ζ₈ + c₁ζ₈² + d₁ζ₈³ + j(a₂ + b₂ζ₈ + c₂ζ₈² + d₂ζ₈³) | aₖ, bₖ, cₖ, dₖ ∈ ℤ } 
+//      ℤ[ζ₈, j]  ≔  { a₁ + b₁ζ₈ + c₁ζ₈² + d₁ζ₈³ + j(a₂ + b₂ζ₈ + c₂ζ₈² + d₂ζ₈³) | aₖ, bₖ, cₖ, dₖ ∈ ℤ } 
 //                       { u + jt  |  u,t ∈ ℤ[ζ₈] }
 //
 //  where  ζ₈ = e^{iπ/4}  is a primitive 8‑th root of unity and  j  is the
@@ -71,7 +72,8 @@ struct Zzeta8j
         return {u.conj_sqrt2(), t.conj_sqrt2()};
     }
 
-    [[nodiscard]] Matrix2C to_Matrix2C() const;
+    template <typename T>
+    [[nodiscard]] Eigen::Matrix2<std::complex<T>> toMatrix2C() const;
 
     [[nodiscard]] Zzeta8j mod2() const {
         return {u.a & 1, u.b & 1, u.c & 1, u.d & 1,

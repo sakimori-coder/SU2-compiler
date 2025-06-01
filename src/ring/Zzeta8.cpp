@@ -3,7 +3,8 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "type.hpp"
+#include "core/type.hpp"
+#include "math/constants.hpp"
 #include "ring/Zroot2.hpp"
 
 
@@ -15,10 +16,14 @@ namespace ring {
 //==============================================================================
 
 // basic properties
-[[nodiscard]] Complex Zzeta8::to_Complex() const {
-    return Real(a.get_mpz_t()) + Real(b.get_mpz_t()) * ZETA8() 
-         + Real(c.get_mpz_t()) * ZETA8_POW2() + Real(d.get_mpz_t())*ZETA8_POW3();
+template <typename T>
+[[nodiscard]] std::complex<T> Zzeta8::toComplex() const {
+    return type::Int_to_Real<T>(a) + type::Int_to_Real<T>(b) * math::ZETA8<T>() 
+         + type::Int_to_Real<T>(c) * math::ZETA8_POW2<T>() + type::Int_to_Real<T>(d) * math::ZETA8_POW3<T>();
 }
+#define X(T) template [[nodiscard]] std::complex<T> Zzeta8::toComplex() const;
+REAL_SCALAR_TYPES
+#undef X
 
 [[nodiscard]] bool Zzeta8::divisible(const Integer& r) const {
     if(a % r != 0) return false;

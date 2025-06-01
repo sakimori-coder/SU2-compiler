@@ -3,7 +3,8 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "type.hpp"
+#include "core/type.hpp"
+#include "math/constants.hpp"
 
 namespace su2compiler {
 namespace ring {
@@ -13,9 +14,13 @@ namespace ring {
 //==============================================================================
 
 //  basic properties
-[[nodiscard]] Real Zroot2::to_Real() const noexcept {
-    return Real(a.get_mpz_t()) + Real(b.get_mpz_t()) * SQRT2();
+template <typename T>
+[[nodiscard]] T Zroot2::toReal() const noexcept {
+    return type::Int_to_Real<T>(a) + type::Int_to_Real<T>(b) * math::SQRT2<T>();
 }
+#define X(T) template [[nodiscard]] T Zroot2::toReal() const noexcept;
+REAL_SCALAR_TYPES
+#undef X
 
 [[nodiscard]] bool Zroot2::divisible(const Integer& r) const{
     if(a % r != 0) return false;

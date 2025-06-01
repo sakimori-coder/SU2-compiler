@@ -1,11 +1,12 @@
 # test/CMakeLists.txt
 file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS *.cpp)
 add_executable(test_runner ${TEST_SOURCES})
-add_dependencies(test_runner gmp mpfr mpreal eigen)
+add_dependencies(test_runner qd gmp mpfr mpreal eigen)
 
 target_include_directories(test_runner PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(test_runner PRIVATE
     su2compiler
+    QD::QD
     GMP::GMP
     GMPXX::GMPXX
     MPFR::MPFR

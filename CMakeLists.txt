@@ -23,7 +23,7 @@ endif()
 
 
 add_compile_options(
-    "$<$<CONFIG:DEBUG>:-O3;-g1;-fdiagnostics-show-template-tree;-fno-elide-type>"
+    "$<$<CONFIG:DEBUG>:-O0;-g1;-fdiagnostics-show-template-tree;-fno-elide-type>"
     "$<$<CONFIG:RELEASE>:-O3;-march=native;-DNDEBUG>"
 )
 
@@ -48,6 +48,29 @@ endif()
 #----------------------------------------------------------------------
 set(EXTERN_PREFIX ${CMAKE_BINARY_DIR}/extern)
 file(MAKE_DIRECTORY ${EXTERN_PREFIX}/include ${EXTERN_PREFIX}/lib)
+
+##### QD 2.3.23 #####
+ExternalProject_Add(
+    qd
+    URL "https://www.davidhbailey.com/dhbsoftware/qd-2.3.23.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    PREFIX ${CMAKE_BINARY_DIR}/qd
+    BUILD_IN_SOURCE 1
+    CONFIGURE_COMMAND ./configure
+                      --disable-silent-rules
+                      --prefix=${EXTERN_PREFIX}
+                      CXXFLAGS=-fPIC
+    BUILD_COMMAND   make -j
+    INSTALL_COMMAND make install
+    BUILD_BYPRODUCTS ${EXTERN_PREFIX}/lib/libqd.a
+)
+add_library(QD::QD STATIC IMPORTED)
+add_dependencies(QD::QD qd)
+set_target_properties(QD::QD PROPERTIES
+    IMPORTED_LOCATION             ${EXTERN_PREFIX}/lib/libqd.a
+    INTERFACE_INCLUDE_DIRECTORIES ${EXTERN_PREFIX}/include
+)
+
 
 ##### GMP 6.3.0 #####
 ExternalProject_Add(
