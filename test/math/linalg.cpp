@@ -12,30 +12,19 @@ using namespace su2compiler;
 using namespace su2compiler::math::linalg;
 
 
-template <typename Real>
-class LinalgTest : public ::testing::Test {
-protected:
-    void SetUp() override {
-        if constexpr(std::is_same_v<Real, mpfr::mpreal>) {
-            mpfr::mpreal::set_default_prec(256);
-        }
-    }
-};
-using RealTypes = ::testing::Types<REAL_SCALAR_TYPE_LIST>;
-TYPED_TEST_SUITE(LinalgTest, RealTypes);
 
-
-TYPED_TEST(LinalgTest, GSO) {
-    using Real = TypeParam;
+TEST(LinalgTest, GSO)
+{
+    Real::set_default_prec(256);
 
     int N = 10;
-    Eigen::MatrixX<Real> B = Eigen::MatrixX<Real>::Random(N,N);
+    MatrixR B = MatrixR::Random(N,N);
     
-    Eigen::MatrixX<Real> B_orth = GSO(B);
+    MatrixR B_orth = GSO(B);
 
-    Real tol = 10 * type::epsilon<Real>();
+    Real tol = 10 * type::epsilon();
 
-    Eigen::MatrixX<Real> D = B_orth.transpose() * B_orth;
+    MatrixR D = B_orth.transpose() * B_orth;
     bool isDiagonal = true;
     for(int i = 0; i < N; i++) {
         for(int j = 0; j < N; j++) {
@@ -52,45 +41,48 @@ TYPED_TEST(LinalgTest, GSO) {
 }
 
 
-TYPED_TEST(LinalgTest, Cholesky) {
-    using Real = TypeParam;
+TEST(LinalgTest, Cholesky)
+{
+    Real::set_default_prec(256);
 
     int N = 50;
-    Eigen::MatrixX<Real> Asq = Eigen::MatrixX<Real>::Random(N,N);
-    Eigen::MatrixX<Real> A = Asq.transpose() * Asq;
+    MatrixR Asq = MatrixR::Random(N,N);
+    MatrixR A = Asq.transpose() * Asq;
 
-    Eigen::MatrixX<Real> L = Cholesky(A);
+    MatrixR L = Cholesky(A);
 
-    Real tol =  10 * type::epsilon<Real>();
+    Real tol =  10 * type::epsilon();
     EXPECT_TRUE(A.isApprox(L*L.transpose(), tol));
 
 }
 
 
-TYPED_TEST(LinalgTest, SolveSystemSPD) {
-    using Real = TypeParam;
+TEST(LinalgTest, SolveSystemSPD)
+{
+    Real::set_default_prec(256);
 
     int N = 50;
-    Eigen::MatrixX<Real> Asq = Eigen::MatrixX<Real>::Random(N,N);
-    Eigen::MatrixX<Real> A = Asq.transpose() * Asq;
-    Eigen::VectorX<Real> b = Eigen::VectorX<Real>::Random(N);
+    MatrixR Asq = MatrixR::Random(N,N);
+    MatrixR A = Asq.transpose() * Asq;
+    VectorR b = VectorR::Random(N);
 
-    Eigen::VectorX<Real> x = SolveSystemSPD(A, b);
+    VectorR x = SolveSystemSPD(A, b);
 
-    Real tol =  1000 * type::epsilon<Real>();
+    Real tol =  1000 * type::epsilon();
     EXPECT_TRUE(b.isApprox(A*x, tol));
 }
 
 
-TYPED_TEST(LinalgTest, InverseSPD) {
-    using Real = TypeParam;
+TEST(LinalgTest, InverseSPD)
+{
+    Real::set_default_prec(256);
 
     int N = 50;
-    Eigen::MatrixX<Real> Asq = Eigen::MatrixX<Real>::Random(N,N);
-    Eigen::MatrixX<Real> A = Asq.transpose() * Asq;
+    MatrixR Asq = MatrixR::Random(N,N);
+    MatrixR A = Asq.transpose() * Asq;
 
-    Eigen::MatrixX<Real> A_inv = InverseSPD(A);
+    MatrixR A_inv = InverseSPD(A);
 
-    Real tol =  1000 * type::epsilon<Real>();
-    EXPECT_TRUE(Eigen::MatrixX<Real>::Identity(N,N).isApprox(A * A_inv, tol));
+    Real tol =  1000 * type::epsilon();
+    EXPECT_TRUE(MatrixR::Identity(N,N).isApprox(A * A_inv, tol));
 }

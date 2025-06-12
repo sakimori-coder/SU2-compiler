@@ -7,7 +7,6 @@
 
 namespace su2compiler::math::lattice{
 
-
 /**
  * @brief Performs the LLL (Lenstra–Lenstra–Lovász) lattice basis reduction.
  *
@@ -23,9 +22,8 @@ namespace su2compiler::math::lattice{
  * @see
  *     https://en.wikipedia.org/wiki/LLL_algorithm
  */
-template <typename Real>
-std::pair<Eigen::MatrixX<Integer>, Eigen::MatrixX<Integer>> LLL(
-        Eigen::MatrixX<Real> B, 
+std::pair<MatrixI, MatrixI> LLL(
+        MatrixR B, 
         Real delta
 );
 
@@ -45,10 +43,9 @@ std::pair<Eigen::MatrixX<Integer>, Eigen::MatrixX<Integer>> LLL(
  * @param c    A real scalar representing the squared "radius" of the ellipsoid.
  * @return     A vector of integer vectors (VectorXI) containing all points satisfying the inequality.
  */
-template <typename Real>
-std::vector<Eigen::VectorX<Integer>> EnumIntegerPoints(
-        Eigen::MatrixX<Real> Q,
-        Eigen::VectorX<Real> p,
+std::vector<VectorI> EnumIntegerPoints(
+        MatrixR Q,
+        VectorR p,
         Real c
 );
     

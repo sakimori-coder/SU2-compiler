@@ -14,13 +14,10 @@ namespace ring {
 //==============================================================================
 
 //  basic properties
-template <typename T>
-[[nodiscard]] T Zroot2::toReal() const noexcept {
-    return type::Int_to_Real<T>(a) + type::Int_to_Real<T>(b) * math::SQRT2<T>();
+[[nodiscard]] Real Zroot2::toReal() const noexcept {
+    return type::Int_to_Real(a) + type::Int_to_Real(b) * math::SQRT2();
 }
-#define X(T) template [[nodiscard]] T Zroot2::toReal() const noexcept;
-REAL_SCALAR_TYPES
-#undef X
+
 
 [[nodiscard]] bool Zroot2::divisible(const Integer& r) const{
     if(a % r != 0) return false;

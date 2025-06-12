@@ -7,21 +7,10 @@
 using namespace su2compiler;
 using su2compiler::ring::Zzeta8j;
 
-template <typename Real>
-class Zzeta8jTest : public ::testing::Test {
-protected:
-    void SetUp() override {
-        if constexpr(std::is_same_v<Real, mpfr::mpreal>) {
-            mpfr::mpreal::set_default_prec(256);
-        }
-    }
-};
-using RealTypes = ::testing::Types<REAL_SCALAR_TYPE_LIST>;
-TYPED_TEST_SUITE(Zzeta8jTest, RealTypes);
 
+TEST(Zzeta8jTest, Mul) {
+    Real::set_default_prec(256);
 
-TYPED_TEST(Zzeta8jTest, Mul) {
-    using Real = TypeParam;
     Integer a1 = 276;
     Integer b1 = -837;
     Integer c1 = -371;
@@ -42,12 +31,12 @@ TYPED_TEST(Zzeta8jTest, Mul) {
 
     Zzeta8j U(a1,b1,c1,d1, a2,b2,c2,d2);
     Zzeta8j V(a3,b3,c3,d3, a3,b3,c3,d3);
-    Eigen::Matrix2<Complex<Real>> U_Matrix2C = U.toMatrix2C<Real>();
-    Eigen::Matrix2<Complex<Real>> V_Matrix2C = V.toMatrix2C<Real>();
+    MatrixC U_MatrixC = U.toMatrixC();
+    MatrixC V_MatrixC = V.toMatrixC();
 
-    EXPECT_TRUE((U_Matrix2C * V_Matrix2C).isApprox(
-            (U * V).toMatrix2C<Real>(), 
-            type::epsilon<Real>()*10
+    EXPECT_TRUE((U_MatrixC * V_MatrixC).isApprox(
+                (U * V).toMatrixC(), 
+                type::epsilon()*10
     ));
 }
 

@@ -23,11 +23,15 @@ template <typename T>
 using Vector8 = Eigen::Vector<T, 8>;
 
 
-template <typename Real>
 std::string synth(
-        SU2<Real> V,
+        SU2 V,
         Real eps)
 {
+    int prec = std::max(53,
+                        static_cast<int>(-8 * mpfr_get_exp(eps.mpfr_ptr()))
+                       );
+    Real::set_default_prec(prec);
+
     if(eps >= Real(1)) return "";
 
     Natural t = 0;
@@ -42,21 +46,15 @@ std::string synth(
 
     return "FAILURE";
 }
-#define X(Real) template std::string synth( \
-        SU2<Real>, \
-        Real);
-REAL_SCALAR_TYPES
-#undef X
 
 
-template <typename Real>
 std::vector<U2Dzeta8> fixed_t_synth(
-        SU2<Real> V,
+        SU2 V,
         Real eps,
         Natural t)
 {
-    SU2<Real> V_prime = V * SU2<Real>(math::ZETA16<Real>(), 
-                                              Complex<Real>(0, 0));
+    SU2 V_prime = V * SU2(math::ZETA16(), 
+                          Complex(0));
     Natural t_prime = std::max(
                 0,
                 int(math::round(Real(int(t)) + 5.0/2.0 * math::log2(eps)).get_si())
@@ -90,7 +88,7 @@ std::vector<U2Dzeta8> fixed_t_synth(
         if((t - t_prime) % 2 == 0) {
             Natural k = (t - t_prime + 2) / 2;
             auto U_R_list = solve_approx_lattice(
-                    U_L.adjoint().toSU2<Real>() * V,
+                    U_L.adjoint().toSU2() * V,
                     eps, 
                     k
             );
@@ -100,7 +98,7 @@ std::vector<U2Dzeta8> fixed_t_synth(
         } else {
             Natural k = (t - t_prime + 3) / 2;
             auto U_R_list = solve_approx_lattice(
-                    U_L.adjoint().toSU2<Real>() * V_prime,
+                    U_L.adjoint().toSU2() * V_prime,
                     eps,
                     k
             );
@@ -115,35 +113,28 @@ std::vector<U2Dzeta8> fixed_t_synth(
     });
     return U_list;
 }
-#define X(Real) template std::vector<U2Dzeta8> fixed_t_synth( \
-    SU2<Real>, \
-    Real, \
-    Natural);
-REAL_SCALAR_TYPES
-#undef X
 
 
-template <typename Real>
 std::vector<ring::Zzeta8j> solve_approx_lattice(
-        SU2<Real> V,
+        SU2 V,
         Real eps,
         Natural k)
 {
     auto& prof = util::Profiler::instance();
     prof.start("SovleApproxLattice");
 
-    Real r = math::pow_ui(math::SQRT2<Real>(), k);
+    Real r = math::pow_ui(math::SQRT2(), k);
 
     // std::cout << k << std::endl;
     Matrix8<Real> Sigma, Sigma_inv;
-    Sigma << 1, math::INV_SQRT2<Real>(), 0,-math::INV_SQRT2<Real>(), 0, 0, 0, 0,
-             0, math::INV_SQRT2<Real>(), 1, math::INV_SQRT2<Real>(), 0, 0, 0, 0,
-             0, 0, 0, 0, 1, math::INV_SQRT2<Real>(), 0,-math::INV_SQRT2<Real>(),
-             0, 0, 0, 0, 0, math::INV_SQRT2<Real>(), 1, math::INV_SQRT2<Real>(),
-             1,-math::INV_SQRT2<Real>(), 0, math::INV_SQRT2<Real>(), 0, 0, 0, 0,
-             0,-math::INV_SQRT2<Real>(), 1,-math::INV_SQRT2<Real>(), 0, 0, 0, 0,
-             0, 0, 0, 0, 1,-math::INV_SQRT2<Real>(), 0, math::INV_SQRT2<Real>(),
-             0, 0, 0, 0, 0,-math::INV_SQRT2<Real>(), 1,-math::INV_SQRT2<Real>();
+    Sigma << 1, math::INV_SQRT2(), 0,-math::INV_SQRT2(), 0, 0, 0, 0,
+             0, math::INV_SQRT2(), 1, math::INV_SQRT2(), 0, 0, 0, 0,
+             0, 0, 0, 0, 1, math::INV_SQRT2(), 0,-math::INV_SQRT2(),
+             0, 0, 0, 0, 0, math::INV_SQRT2(), 1, math::INV_SQRT2(),
+             1,-math::INV_SQRT2(), 0, math::INV_SQRT2(), 0, 0, 0, 0,
+             0,-math::INV_SQRT2(), 1,-math::INV_SQRT2(), 0, 0, 0, 0,
+             0, 0, 0, 0, 1,-math::INV_SQRT2(), 0, math::INV_SQRT2(),
+             0, 0, 0, 0, 0,-math::INV_SQRT2(), 1,-math::INV_SQRT2();
     Sigma_inv = Sigma.transpose();
     Sigma_inv /= Real(2);
     
@@ -177,7 +168,7 @@ std::vector<ring::Zzeta8j> solve_approx_lattice(
     p << r * math::sqrt(Real(1) - eps*eps), 0, 0, 0, 0, 0, 0, 0;
     p = Sigma_inv * P * p;
 
-    auto X = math::lattice::EnumIntegerPoints<Real>(Q, p, Real(1));
+    auto X = math::lattice::EnumIntegerPoints(Q, p, Real(1));
 
     Integer key = Integer(1) << k;
     std::vector<ring::Zzeta8j> Solutions;
@@ -186,7 +177,7 @@ std::vector<ring::Zzeta8j> solve_approx_lattice(
                         xvec(4), xvec(5), xvec(6), xvec(7));
 
         if(q.norm_quaternion() == key) {
-            SU2 U(q.u.toComplex<Real>(), q.t.toComplex<Real>());
+            SU2 U(q.u.toComplex(), q.t.toComplex());
             U.unitalize();
             if(distance(U, V) < eps) {
                 Solutions.push_back(q);
@@ -197,12 +188,7 @@ std::vector<ring::Zzeta8j> solve_approx_lattice(
     prof.stop("SovleApproxLattice");
     return Solutions;
 }
-#define X(Real) template std::vector<ring::Zzeta8j> solve_approx_lattice( \
-    SU2<Real>, \
-    Real, \
-    Natural);
-REAL_SCALAR_TYPES
-#undef X
+
 
 
 

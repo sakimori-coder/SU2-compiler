@@ -46,8 +46,7 @@ struct Zroot2
         return {a, -b};
     }
 
-    template <typename T>
-    [[nodiscard]] T toReal() const noexcept;
+    [[nodiscard]] Real toReal() const noexcept;
 
     [[nodiscard]] bool divisible(const Integer& r) const;
     [[nodiscard]] bool divisible(const Zroot2& r) const;

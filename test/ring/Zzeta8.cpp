@@ -7,21 +7,10 @@
 using namespace su2compiler;
 using su2compiler::ring::Zzeta8;
 
-template <typename Real>
-class Zzeta8Test : public ::testing::Test {
-protected:
-    void SetUp() override {
-        if constexpr(std::is_same_v<Real, mpfr::mpreal>) {
-            mpfr::mpreal::set_default_prec(256);
-        }
-    }
-};
-using RealTypes = ::testing::Types<REAL_SCALAR_TYPE_LIST>;
-TYPED_TEST_SUITE(Zzeta8Test, RealTypes);
 
+TEST(Zzeta8Test, Add) {
+    Real::set_default_prec(256);
 
-TYPED_TEST(Zzeta8Test, Add) {
-    using Real = TypeParam;
     Integer a1 = 8518;
     Integer b1 = 3094;
     Integer c1 = -8684;
@@ -34,18 +23,19 @@ TYPED_TEST(Zzeta8Test, Add) {
 
     Zzeta8 x(a1, b1, c1, d1);
     Zzeta8 y(a2, b2, c2, d2);
-    Complex<Real> x_Complex = x.toComplex<Real>();
-    Complex<Real> y_Complex = y.toComplex<Real>();
+    Complex x_Complex = x.toComplex();
+    Complex y_Complex = y.toComplex();
 
-    Complex<Real> val1 = (x + y).toComplex<Real>();
-    Complex<Real> val2 = x_Complex + y_Complex;
+    Complex val1 = (x + y).toComplex();
+    Complex val2 = x_Complex + y_Complex;
 
     EXPECT_TRUE(math::abs(val1 - val2) < 
-            std::min(math::abs(val1), math::abs(val2)) * type::epsilon<Real>()*10);
+            std::min(math::abs(val1), math::abs(val2)) * type::epsilon()*10);
 }
 
-TYPED_TEST(Zzeta8Test, Sub) {
-    using Real = TypeParam;
+TEST(Zzeta8Test, Sub) {
+    Real::set_default_prec(256);
+
     Integer a1 = 8518;
     Integer b1 = 3094;
     Integer c1 = -8684;
@@ -58,18 +48,19 @@ TYPED_TEST(Zzeta8Test, Sub) {
 
     Zzeta8 x(a1, b1, c1, d1);
     Zzeta8 y(a2, b2, c2, d2);
-    Complex<Real> x_Complex = x.toComplex<Real>();
-    Complex<Real> y_Complex = y.toComplex<Real>();
+    Complex x_Complex = x.toComplex();
+    Complex y_Complex = y.toComplex();
 
-    Complex<Real> val1 = (x - y).toComplex<Real>();
-    Complex<Real> val2 = x_Complex - y_Complex;
+    Complex val1 = (x - y).toComplex();
+    Complex val2 = x_Complex - y_Complex;
 
     EXPECT_TRUE(math::abs(val1 - val2) < 
-            std::min(math::abs(val1), math::abs(val2)) * type::epsilon<Real>()*10);
+            std::min(math::abs(val1), math::abs(val2)) * type::epsilon()*10);
 }
 
-TYPED_TEST(Zzeta8Test, Mul) {
-    using Real = TypeParam;
+TEST(Zzeta8Test, Mul) {
+    Real::set_default_prec(256);
+
     Integer a1 = 8518;
     Integer b1 = 3094;
     Integer c1 = -8684;
@@ -87,14 +78,14 @@ TYPED_TEST(Zzeta8Test, Mul) {
 
     Zzeta8 x(a1, b1, c1, d1);
     Zzeta8 y(a2, b2, c2, d2);
-    Complex<Real> x_Complex = x.toComplex<Real>();
-    Complex<Real> y_Complex = y.toComplex<Real>();
+    Complex x_Complex = x.toComplex();
+    Complex y_Complex = y.toComplex();
 
-    Complex<Real> val1 = (x * y).toComplex<Real>();
-    Complex<Real> val2 = x_Complex * y_Complex;
+    Complex val1 = (x * y).toComplex();
+    Complex val2 = x_Complex * y_Complex;
 
     EXPECT_TRUE(math::abs(val1 - val2) < 
-            std::min(math::abs(val1), math::abs(val2)) * type::epsilon<Real>()*10);
+            std::min(math::abs(val1), math::abs(val2)) * type::epsilon()*10);
 }
 
 TEST(Zzeta8Test, Div) {

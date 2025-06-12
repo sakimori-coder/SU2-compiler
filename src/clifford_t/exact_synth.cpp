@@ -70,7 +70,7 @@ U2Dzeta8::U2Dzeta8(Matrix2Zzeta8 _mat, Natural _k) {
 	k = _k;
 	Matrix2Zzeta8 mat_dag;
 	mat_dag << mat(0,0).conj_complex(), mat(1,0).conj_complex(),
-			   mat(0,1).conj_complex(), mat(1,1).conj_complex();
+	           mat(0,1).conj_complex(), mat(1,1).conj_complex();
 	if(mat * mat_dag != ring::Zzeta8((Integer(1) << _k)) * Matrix2Zzeta8::Identity()) {
 		throw std::invalid_argument("U2Dzeta8() : the given matrix is not in U(2)");
 	}
@@ -113,8 +113,7 @@ U2Dzeta8::U2Dzeta8(std::string sequence) {
 	}
 }
 
-template <typename RealType>
-[[nodiscard]] SU2<RealType> U2Dzeta8::toSU2() const {
+[[nodiscard]] SU2 U2Dzeta8::toSU2() const {
 	int l;
 	ring::Zzeta8 zeta8_pow(1);
 	for(l = 0; l < 8; l++) {
@@ -122,17 +121,14 @@ template <typename RealType>
 		zeta8_pow *= ring::Zzeta8(0,1,0,0); 
 	}
 
-	std::complex<RealType> u = mat(0,0).toComplex<RealType>() / math::pow_ui(math::SQRT2<RealType>(), k);
-	std::complex<RealType> t = mat(1,0).toComplex<RealType>() / math::pow_ui(math::SQRT2<RealType>(), k);
+	Complex u = mat(0,0).toComplex() / math::pow_ui(math::SQRT2(), k);
+	Complex t = mat(1,0).toComplex() / math::pow_ui(math::SQRT2(), k);
 	for(int i = 0; i < l; i++) {
-		u /= math::ZETA16<RealType>();
-		t /= math::ZETA16<RealType>();
+		u /= math::ZETA16();
+		t /= math::ZETA16();
 	}
-	return SU2<RealType>(u, t);
+	return SU2(u, t);
 }
-#define X(RealType) template [[nodiscard]] SU2<RealType> U2Dzeta8::toSU2() const;
-REAL_SCALAR_TYPES
-#undef X
 
 
 [[nodiscard]] SO3Droot2 U2Dzeta8::toSO3Droot2() const {
@@ -161,7 +157,7 @@ REAL_SCALAR_TYPES
 		return ring::Zroot2(trace.a / 2, (trace.b - trace.d) / 4);	
 	};
     
-	mat_SO3(0,0) = trace_real(X * UXUdag);
+    mat_SO3(0,0) = trace_real(X * UXUdag);
     mat_SO3(0,1) = trace_real(X * UYUdag);
     mat_SO3(0,2) = trace_real(X * UZUdag);
 

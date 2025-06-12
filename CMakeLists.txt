@@ -23,7 +23,7 @@ endif()
 
 
 add_compile_options(
-    "$<$<CONFIG:DEBUG>:-O0;-g1;-fdiagnostics-show-template-tree;-fno-elide-type>"
+    "$<$<CONFIG:DEBUG>:-O3;-g1;-fdiagnostics-show-template-tree;-fno-elide-type>"
     "$<$<CONFIG:RELEASE>:-O3;-march=native;-DNDEBUG>"
 )
 

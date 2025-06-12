@@ -10,23 +10,21 @@
 
 namespace su2compiler::clifford_t::deterministic {
 
-template <typename RealType>
 std::string synth(
-        SU2<RealType> V,
-        RealType eps
+        SU2 V,
+        Real eps
 );
 
-template <typename RealType>
 std::vector<exact::U2Dzeta8> fixed_t_synth(
-        SU2<RealType> V,
-        RealType eps,
+        SU2 V,
+        Real eps,
         Natural t
 );
 
-template <typename RealType>
+
 std::vector<ring::Zzeta8j> solve_approx_lattice(
-        SU2<RealType> V,
-        RealType eps,
+        SU2 V,
+        Real eps,
         Natural k
 );
 

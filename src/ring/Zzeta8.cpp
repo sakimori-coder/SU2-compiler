@@ -16,14 +16,10 @@ namespace ring {
 //==============================================================================
 
 // basic properties
-template <typename T>
-[[nodiscard]] std::complex<T> Zzeta8::toComplex() const {
-    return type::Int_to_Real<T>(a) + type::Int_to_Real<T>(b) * math::ZETA8<T>() 
-         + type::Int_to_Real<T>(c) * math::ZETA8_POW2<T>() + type::Int_to_Real<T>(d) * math::ZETA8_POW3<T>();
+[[nodiscard]] Complex Zzeta8::toComplex() const {
+    return type::Int_to_Real(a) + type::Int_to_Real(b) * math::ZETA8() 
+         + type::Int_to_Real(c) * math::ZETA8_POW2() + type::Int_to_Real(d) * math::ZETA8_POW3();
 }
-#define X(T) template [[nodiscard]] std::complex<T> Zzeta8::toComplex() const;
-REAL_SCALAR_TYPES
-#undef X
 
 [[nodiscard]] bool Zzeta8::divisible(const Integer& r) const {
     if(a % r != 0) return false;

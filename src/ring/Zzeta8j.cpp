@@ -17,18 +17,15 @@ namespace ring {
 //==============================================================================
 
 // basic properties
-template <typename T>
-[[nodiscard]] Eigen::Matrix2<std::complex<T>> Zzeta8j::toMatrix2C() const {
-    Eigen::Matrix2<std::complex<T>> U;
-    U << u.toComplex<T>(), -t.conj_complex().toComplex<T>(),
-         t.toComplex<T>(),  u.conj_complex().toComplex<T>();
+[[nodiscard]] MatrixC Zzeta8j::toMatrixC() const {
+    MatrixC U(2,2);
+    U << u.toComplex(), -t.conj_complex().toComplex(),
+         t.toComplex(),  u.conj_complex().toComplex();
     return U;
 }
-#define X(T) template [[nodiscard]] Eigen::Matrix2<std::complex<T>> Zzeta8j::toMatrix2C() const;
-REAL_SCALAR_TYPES
-#undef X
 
-[[nodiscard]] bool Zzeta8j::divisible(const Integer& r) const{
+
+[[nodiscard]] bool Zzeta8j::divisible(const Integer& r) const {
     if(u.divisible(r) && t.divisible(r)) return true;
     return false;
 }

@@ -58,16 +58,14 @@ struct U2Dzeta8 {
         return {mat_adj, k};
     }
 
-    template <typename RealType>
-    [[nodiscard]] Eigen::Matrix2<std::complex<RealType>> toMatrix2C() const {
-        return (Eigen::Matrix2<std::complex<RealType>>() << 
-                mat(0,0).toComplex<RealType>(), mat(0,1).toComplex<RealType>(),
-                mat(1,0).toComplex<RealType>(), mat(1,1).toComplex<RealType>()
-               ).finished() / math::pow_ui(math::SQRT2<RealType>(), k);
+    [[nodiscard]] Eigen::Matrix2<std::complex<Real>> toMatrix2C() const {
+        return (Eigen::Matrix2<std::complex<Real>>() << 
+                mat(0,0).toComplex(), mat(0,1).toComplex(),
+                mat(1,0).toComplex(), mat(1,1).toComplex()
+               ).finished() / math::pow_ui(math::SQRT2(), k);
     }
 
-    template <typename RealType>
-    [[nodiscard]] SU2<RealType> toSU2() const;
+    [[nodiscard]] SU2 toSU2() const;
 
     [[nodiscard]] SO3Droot2 toSO3Droot2() const;
 

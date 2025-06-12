@@ -70,8 +70,7 @@ struct Zzeta8
         return {a, -b, c, -d};
     }
 
-    template <typename T>
-    [[nodiscard]] std::complex<T> toComplex() const;
+    Complex toComplex() const;
 
     [[nodiscard]] bool divisible(const Integer& r) const;
     [[nodiscard]] bool divisible(const Zroot2& r) const;

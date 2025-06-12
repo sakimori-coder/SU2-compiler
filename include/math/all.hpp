@@ -1,6 +1,8 @@
 #pragma once
 
-#include "math/constants.hpp"
-#include "math/functions.hpp"
-#include "math/linalg.hpp"
+#include "constants.hpp"
+#include "functions.hpp"
+#include "lattice.hpp"
+#include "linalg.hpp"
 #include "number_theory.hpp"
+#include "sdp.hpp"

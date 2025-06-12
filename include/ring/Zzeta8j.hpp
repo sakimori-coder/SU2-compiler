@@ -72,8 +72,7 @@ struct Zzeta8j
         return {u.conj_sqrt2(), t.conj_sqrt2()};
     }
 
-    template <typename T>
-    [[nodiscard]] Eigen::Matrix2<std::complex<T>> toMatrix2C() const;
+    [[nodiscard]] MatrixC toMatrixC() const;
 
     [[nodiscard]] Zzeta8j mod2() const {
         return {u.a & 1, u.b & 1, u.c & 1, u.d & 1,

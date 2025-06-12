@@ -8,37 +8,20 @@
 using namespace su2compiler;
 
 
-template <typename Real>
-class CliffordTDetSynthTest : public ::testing::Test {
-protected:
-    void SetUp() override {
-        if constexpr(std::is_same_v<Real, double>) {
-            exit(0);
-        }
-        if constexpr(std::is_same_v<Real, mpfr::mpreal>) {
-            mpfr::mpreal::set_default_prec(256);
-        }
-    }
-};
-using RealTypes = ::testing::Types<REAL_SCALAR_TYPE_LIST>;
-TYPED_TEST_SUITE(CliffordTDetSynthTest, RealTypes);
 
-
-TYPED_TEST(CliffordTDetSynthTest, random) {
-    using RealType = TypeParam;
-
-    SU2<RealType> V = random_unitary<RealType>(1234);
-    RealType eps = 1e-5;
+TEST(CliffordTDetSynthTest, random) {
+    SU2 V = random_unitary(1234);
+    Real eps = 1e-5;
 
     std::string sequence = clifford_t::deterministic::synth(V, eps);
     // std::cout << "T-count = " << std::count(sequence.begin(), sequence.end(), 'T') << std::endl;
 
-    SU2<RealType> H(Complex<RealType>(0, 1) / math::SQRT2<RealType>(), 
-                    Complex<RealType>(0, 1) / math::SQRT2<RealType>());
-    SU2<RealType> S(std::conj(math::ZETA8<RealType>()), Complex<RealType>(0, 0));
-    SU2<RealType> T(std::conj(math::ZETA16<RealType>()), Complex<RealType>(0, 0));
+    SU2 H(Complex(0, 1) / math::SQRT2(), 
+          Complex(0, 1) / math::SQRT2());
+    SU2 S(std::conj(math::ZETA8()), Complex(0, 0));
+    SU2 T(std::conj(math::ZETA16()), Complex(0, 0));
 
-    SU2<RealType> U(1,0,0,0);
+    SU2 U(1,0,0,0);
     for(char gate : sequence) {
         switch (gate) {
             case 'H':
@@ -55,6 +38,6 @@ TYPED_TEST(CliffordTDetSynthTest, random) {
         }
     }
 
-    RealType dist = distance(U, V);
+    Real dist = distance(U, V);
     EXPECT_TRUE(dist < eps);
 }
